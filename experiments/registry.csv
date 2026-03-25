@@ -1,1 +1,8 @@
 run_id,date,method,crop_split,heldout_crop,n_labels,seed,config_path,command,checkpoint_path,status,notes
+dataset_tomato,2026-03-25,manifest_add,tomato,,513,42,configs/datasets/tomato.yaml,, ,added,Tomato manifest added
+dataset_strawberry,2026-03-25,manifest_add,strawberry,,4000,42,configs/datasets/strawberry.yaml,, ,added,Strawberry manifest added
+dataset_apple,2026-03-25,manifest_add,apple,,10000,42,configs/datasets/apple.yaml,, ,added,Apple manifest added
+dataset_kiwi,2026-03-25,manifest_add,kiwi,,302,42,configs/datasets/kiwi.yaml,, ,added,Kiwi (held-out) manifest added
+step2_downloader,2026-03-25,script_add,,,,,scripts/download_datasets.py,, ,added,Roboflow dataset download script
+step2_validator,2026-03-25,script_add,,,,,src/greenpoll/data/validate_yolo_labels.py,, ,added,YOLO label format validator
+step2_data_docs,2026-03-25,doc_add,,,,,data/README.md,, ,added,Dataset structure and freeze policy documentation
