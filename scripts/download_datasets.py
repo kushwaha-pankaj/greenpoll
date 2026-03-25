@@ -6,6 +6,7 @@ Usage:
     python scripts/download_datasets.py --all
 """
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -37,11 +38,15 @@ def download_crop(crop_name: str, api_key: str = None) -> bool:
         '-f', fmt,
         '-l', str(out_path),
     ]
+    
+    # Set up environment with API key if provided
+    env = None
     if api_key:
-        cmd.extend(['--api-key', api_key])
+        env = os.environ.copy()
+        env['ROBOFLOW_API_KEY'] = api_key
     
     try:
-        result = subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, check=True, env=env)
         print(f'✓ {crop_name} dataset downloaded to {out_path}')
         return True
     except subprocess.CalledProcessError as e:
@@ -55,8 +60,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Download crop datasets from Roboflow.')
     parser.add_argument('--crop', type=str, help='Specific crop to download (tomato/strawberry/apple/kiwi)')
     parser.add_argument('--all', action='store_true', help='Download all crops')
-    parser.add_argument('--api-key', type=str, default=None, help='Roboflow API key (default: from env)')
+    parser.add_argument('--api-key', type=str, default=None, help='Roboflow API key (default: from ROBOFLOW_API_KEY env var)')
     args = parser.parse_args()
+    
+    # Use provided API key or fall back to environment variable
+    api_key = args.api_key or os.environ.get('ROBOFLOW_API_KEY')
+    
+    if not api_key:
+        print('⚠ No Roboflow API key provided.')
+        print('  Set it via:')
+        print('    export ROBOFLOW_API_KEY="your_key_here"')
+        print('    python scripts/download_datasets.py --all')
+        print('  Or pass via --api-key flag:')
+        print('    python scripts/download_datasets.py --all --api-key YOUR_KEY')
+        sys.exit(1)
     
     if not args.crop and not args.all:
         parser.print_help()
@@ -65,7 +82,7 @@ if __name__ == '__main__':
     crops_to_download = list(DATASETS.keys()) if args.all else [args.crop]
     success_count = 0
     for crop in crops_to_download:
-        if download_crop(crop, args.api_key):
+        if download_crop(crop, api_key):
             success_count += 1
     
     print(f'\n{success_count}/{len(crops_to_download)} datasets downloaded successfully.')
