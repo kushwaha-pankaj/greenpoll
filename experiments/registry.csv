@@ -1,0 +1,1 @@
+run_id,date,method,crop_split,heldout_crop,n_labels,seed,config_path,command,checkpoint_path,status,notes

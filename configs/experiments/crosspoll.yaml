@@ -1,0 +1,28 @@
+project:
+  name: crosspoll
+  task: detect
+  model: yolov8n.pt
+
+data:
+  train_crops: [tomato, strawberry, apple]
+  heldout_crop: kiwi
+  label_budgets: [25, 50, 100, 200, 500]
+
+training:
+  epochs: 300
+  patience: 20
+  imgsz: 640
+  batch: -1
+  optimizer: AdamW
+  amp: true
+  lr0_joint: 0.001
+  lr0_finetune: 0.0001
+
+evaluation:
+  primary_metric: mAP50
+  secondary_metrics: [precision, recall, f1]
+
+reproducibility:
+  seeds: [42, 43, 44]
+  log_registry: experiments/registry.csv
+  log_results: results/summary.csv
