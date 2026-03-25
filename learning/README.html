@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CrossPoll · Learning Guide</title>
+  <title>CrossPoll · Learning Journal</title>
 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
@@ -314,52 +314,162 @@
 <nav>
   <div class="logo">
     <h1>CrossPoll</h1>
-    <p>Learning Guide</p>
+    <p>Learning Journal</p>
   </div>
 
-  <div class="section-label">Contents</div>
-  <a href="#project-map"><span class="dot"></span>Project Map</a>
-  <a href="#problem-terms"><span class="dot"></span>Problem Terms</a>
-  <a href="#method-terms"><span class="dot"></span>Method Terms</a>
-  <a href="#architecture"><span class="dot"></span>YOLOv8 Architecture</a>
-  <a href="#baselines"><span class="dot"></span>Baseline Ladder</a>
-  <a href="#metrics"><span class="dot"></span>Metric Dashboard</a>
-  <a href="#data-hygiene"><span class="dot"></span>Data Hygiene</a>
-  <a href="#augmentation"><span class="dot"></span>Augmentation</a>
-  <a href="#repro-stack"><span class="dot"></span>Repro Stack</a>
-  <a href="#learning-path"><span class="dot"></span>Learning Path</a>
+  <div class="section-label">Phases</div>
+  <a href="#phase1"><span class="dot"></span>Phase 1: Setup ✅</a>
+  <a href="#phase2"><span class="dot"></span>Phase 2: Data ✅</a>
+  <a href="#phase3"><span class="dot"></span>Phase 3: Validation ✅</a>
+  <a href="#phase4"><span class="dot"></span>Phase 4: Design</a>
+  
+  <div class="section-label">Resources</div>
+  <a href="#dataset-breakdown"><span class="dot"></span>Datasets</a>
+  <a href="#critical-discovery"><span class="dot"></span>Issues Found</a>
+  <a href="#lessons"><span class="dot"></span>Lessons Learned</a>
+  <a href="#status"><span class="dot"></span>Current Status</a>
+  <a href="#future"><span class="dot"></span>Next Steps</a>
 
   <a href="CHEATSHEET.html" class="cheatsheet-link">→ Open Cheat Sheet</a>
 </nav>
 
 <main>
 
-  <!-- Project Map -->
-  <div class="section" id="project-map">
+  <!-- Phase 1 -->
+  <div class="section" id="phase1">
     <div class="section-header">
-      <span class="icon">🗺</span>
-      <h2>Project Map</h2>
-      <span class="tag">Overview</span>
+      <span class="icon">⚙️</span>
+      <h2>Phase 1: Environment & Setup</h2>
+      <span class="tag">✅ Completed</span>
     </div>
-    <div class="diagram-wrap">
-      <div class="mermaid">
-flowchart LR
-    A[COCO Pretrained\nYOLOv8n] --> B[Joint Pretrain\non Source Crops]
-    B --> C[Fine-tune on\nHeld-out Crop]
-    C --> D[Evaluate\nMetrics]
-    D --> E[Log Reproducible\nResults]
-    style A fill:#1a3a5c,stroke:#5b8dee,color:#e2e8f0
-    style B fill:#1a3a5c,stroke:#5b8dee,color:#e2e8f0
-    style C fill:#1a3a5c,stroke:#5b8dee,color:#e2e8f0
-    style D fill:#14432e,stroke:#43d9a2,color:#e2e8f0
-    style E fill:#14432e,stroke:#43d9a2,color:#e2e8f0
-      </div>
-    </div>
+    <p><strong>What we did:</strong> Set up Python environment, CLI infrastructure, dataset manifests</p>
     <div class="callout">
-      <strong>Context:</strong> GreenPoll is a software-only pipeline for greenhouse pollination robotics.
-      CrossPoll is the core research method — cross-crop transfer learning with YOLOv8n to detect flowers
-      under limited label budgets.
+      <strong>YOLOv8n (nano) is appropriate because:</strong>
+      <ul style="margin-top:8px; margin-left:20px;">
+        <li>Time budget: 3–5 hrs/week requires efficiency</li>
+        <li>Dataset size: ~2.3 GB (small for nano, large for meaningful transfer)</li>
+        <li>Deployment: Edge robot inference</li>
+        <li>Stability: Mature Ultralytics vs fragile meta-learning</li>
+      </ul>
     </div>
+    <div class="table-wrap" style="margin-top:12px;">
+      <table>
+        <thead><tr><th>Component</th><th>Selection</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Model</strong></td><td>Ultralytics YOLOv8n (COCO pretrained)</td></tr>
+          <tr><td><strong>Framework</strong></td><td>PyTorch (implicit via Ultralytics)</td></tr>
+          <tr><td><strong>Config system</strong></td><td>YAML-based manifests + experiment config</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="section" id="phase2">
+    <div class="section-header">
+      <span class="icon">📦</span>
+      <h2>Phase 2: Data Curation & Download</h2>
+      <span class="tag">✅ Completed</span>
+    </div>
+    <p><strong>What we did:</strong> Downloaded 4 flower detection datasets via Roboflow, created metadata manifests</p>
+    
+    <h3 id="dataset-breakdown">Dataset Breakdown</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Crop</th><th>Images</th><th>Size</th><th>Classes</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Apple</strong></td><td>10,379</td><td>1.9 GB</td><td>1 (flower)</td><td>Training</td></tr>
+          <tr><td><strong>Strawberry</strong></td><td>5,419</td><td>329 MB</td><td>3 (flower, ripe, unripe)</td><td>Training</td></tr>
+          <tr><td><strong>Tomato</strong></td><td>513</td><td>23 MB</td><td>3 (class0, class1, class2)</td><td>Training</td></tr>
+          <tr><td><strong>Kiwi</strong></td><td>302</td><td>18 MB</td><td>1 (flower)</td><td>Held-out eval</td></tr>
+          <tr style="font-weight:bold;"><td>TOTAL</td><td>16,613</td><td>2.3 GB</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:12px;">
+      <strong>Key insights:</strong>
+      <ul style="margin-top:8px; margin-left:20px;">
+        <li>Roboflow exports don't always match metadata declarations</li>
+        <li>Must validate class counts against actual data.yaml files</li>
+        <li>Image counts varied from expectations (strawberry 4000→5419)</li>
+        <li>Held-out crop strategy (kiwi) is essential for unbiased evaluation</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="section" id="phase3">
+    <div class="section-header">
+      <span class="icon">🔍</span>
+      <h2>Phase 3: Pre-Flight Verification</h2>
+      <span class="tag">✅ Completed</span>
+    </div>
+    <p><strong>What we did:</strong> Comprehensive validation before Step 3, discovered and fixed manifest inconsistencies</p>
+    
+    <h3 id="critical-discovery">Critical Discovery: Manifest-Data Mismatch</h3>
+    <div class="callout" style="background: color-mix(in srgb, #e76f51 12%, transparent); border-left-color: #e76f51;">
+      <strong style="color: #e76f51;">⚠️ Problem Detected:</strong>
+      <p style="margin-top:8px;">Tomato manifest declared 1 class, but actual Roboflow export contained 3 classes</p>
+      <ul style="margin-top:8px; margin-left:20px;">
+        <li><code>Manifest: nc: 1, classes: [flower]</code></li>
+        <li><code>Actual: nc: 3, class_id ∈ {0, 1, 2}</code></li>
+      </ul>
+    </div>
+    
+    <h3>Detection Method</h3>
+    <div class="code-block" style="background: var(--surface2); padding:12px; border-radius:4px; margin:12px 0;">
+$ python -m greenpoll.data.validate_yolo_labels data/tomato 1<br/>
+<span style="color: #e76f51;">Result: Only 2 valid labels, 511 errors</span><br/>
+<span style="color: #e76f51;">Error: "class_id 1 out of range [0, 0]"</span>
+    </div>
+    
+    <h3>Resolution Applied</h3>
+    <ul>
+      <li><strong>Tomato:</strong> Updated nc: 1→3, added class names [class0, class1, class2]</li>
+      <li><strong>Strawberry:</strong> Confirmed nc: 3, corrected image count 4000→5419</li>
+      <li><strong>Apple:</strong> Added num_classes: 1, corrected images 10000→10379</li>
+      <li><strong>Kiwi:</strong> Added num_classes: 1, clarified as heldout</li>
+    </ul>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="section" id="phase4">
+    <div class="section-header">
+      <span class="icon">🧠</span>
+      <h2>Phase 4: Design Decisions Rationale</h2>
+      <span class="tag">Reference</span>
+    </div>
+    
+    <h3>Why YOLOv8n not other variants?</h3>
+    <ul>
+      <li><strong>YOLOv8s/m/l/x:</strong> Too slow for 3–5 hrs/week (150+ training runs needed)</li>
+      <li><strong>YOLOv5/7:</strong> Older, less maintained</li>
+      <li><strong>Meta-learning (MAML, Prototypical):</strong> Fragile, hard to tune</li>
+      <li><strong>✓ YOLOv8n:</strong> Sweet spot—small &amp; fast, strong transfer learning</li>
+    </ul>
+    
+    <h3>Why COCO pretraining baseline?</h3>
+    <ul>
+      <li>Zero-shot transfer: general object detection → flower detection</li>
+      <li>Baseline before cross-crop transfer and harmonization</li>
+      <li>Comparison point: "How much does domain transfer help?"</li>
+    </ul>
+    
+    <h3>Why hold out kiwi crop?</h3>
+    <ul>
+      <li>Modern few-shot evaluation (model never trains on kiwi)</li>
+      <li>No training-test contamination</li>
+      <li>Isolates label budget effect</li>
+      <li>Fair: "Does [tomato, strawberry, apple] training help kiwi?"</li>
+    </ul>
+    
+    <h3>Why harmonize all crops to "flower"?</h3>
+    <ul>
+      <li>Strawberry: [flower, ripe, unripe] → ignore ripeness, focus location only</li>
+      <li>Tomato: [class0, class1, class2] → semantically unclear, likely different types</li>
+      <li>Apple: already [flower] ✓</li>
+      <li><strong>Result:</strong> unified class → joint training without confusion</li>
+    </ul>
   </div>
 
   <!-- Problem Terms -->

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrossPoll Project Roadmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        header p {
+            font-size: 1.15em;
+            opacity: 0.95;
+        }
+        
+        .timeline-container {
+            padding: 40px;
+        }
+        
+        .phase {
+            margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .phase:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: 30px;
+            top: 100px;
+            width: 2px;
+            height: calc(100% + 30px);
+            background: #e9ecef;
+        }
+        
+        .phase-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .phase-marker {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            margin-right: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .phase-complete {
+            background: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+        
+        .phase-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        .phase-upcoming {
+            background: #e2e3e5;
+            color: #383d41;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.8); }
+        }
+        
+        .phase-title-box {
+            flex: 1;
+        }
+        
+        .phase-title-box h2 {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .phase-subtitle {
+            color: #666;
+            font-size: 1em;
+            font-style: italic;
+        }
+        
+        .phase-content {
+            margin-left: 80px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .phase-content h3 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        
+        .phase-content h3:first-child {
+            margin-top: 0;
+        }
+        
+        .metrics-box {
+            background: white;
+            border: 2px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+        
+        .substep {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #764ba2;
+        }
+        
+        .substep strong {
+            color: #667eea;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tr:hover {
+            background: #f0f3ff;
+        }
+        
+        .dataset-table {
+            margin: 20px 0;
+        }
+        
+        .timeline-visual {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .timeline-item {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .timeline-item.complete {
+            background: #d4edda;
+            border: 2px solid #155724;
+        }
+        
+        .timeline-item.active {
+            background: #fff3cd;
+            border: 2px solid #856404;
+        }
+        
+        .timeline-item.upcoming {
+            background: #f8d7da;
+            border: 2px solid #721c24;
+        }
+        
+        .timeline-item h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .timeline-item p {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .success-criteria {
+            background: #d4edda;
+            border: 2px solid #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .success-criteria h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .success-criteria ul {
+            margin-left: 20px;
+        }
+        
+        .success-criteria li {
+            color: #155724;
+            margin: 5px 0;
+        }
+        
+        .file-tree {
+            background: #2b2d42;
+            color: #edf0f8;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85em;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .file-tree .folder {
+            color: #a78bfa;
+        }
+        
+        .file-tree .file {
+            color: #60a5fa;
+        }
+        
+        .budget-bar {
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            margin: 15px 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+        
+        .budget-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        
+        .notes-box {
+            background: #e7f3ff;
+            border: 2px solid #0066cc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .notes-box strong {
+            color: #0066cc;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        footer p {
+            margin: 5px 0;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+            
+            .phase-content {
+                margin-left: 0;
+            }
+            
+            .timeline-visual {
+                flex-direction: column;
+            }
+            
+            .timeline-item {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ CrossPoll Project Roadmap</h1>
+            <p>Complete milestone tracking and implementation timeline</p>
+        </header>
+        
+        <div class="timeline-container">
+            <!-- Timeline Overview -->
+            <h2 style="color: #667eea; margin-bottom: 30px; text-align: center; font-size: 1.8em;">Project Timeline</h2>
+            <div class="timeline-visual">
+                <div class="timeline-item complete">
+                    <h4>✅ Step 1</h4>
+                    <p>Environment Setup<br><small>Complete</small></p>
+                </div>
+                <div class="timeline-item complete">
+                    <h4>✅ Step 2</h4>
+                    <p>Data Curation<br><small>Complete</small></p>
+                </div>
+                <div class="timeline-item active">
+                    <h4>🚀 Step 3</h4>
+                    <p>COCO Baseline<br><small>Current</small></p>
+                </div>
+                <div class="timeline-item upcoming">
+                    <h4>⏳ Step 4</h4>
+                    <p>Transfer Learning<br><small>Pending</small></p>
+                </div>
+                <div class="timeline-item upcoming">
+                    <h4>⏳ Step 5</h4>
+                    <p>CrossPoll Pipeline<br><small>Pending</small></p>
+                </div>
+            </div>
+            
+            <!-- Step 1 -->
+            <div class="phase">
+                <div class="phase-header">
+                    <div class="phase-marker phase-complete">✓</div>
+                    <div class="phase-title-box">
+                        <h2>Step 1: Environment Setup</h2>
+                        <p class="phase-subtitle">Foundation and infrastructure</p>
+                    </div>
+                </div>
+                <div class="phase-content">
+                    <h3>Deliverables</h3>
+                    <ul>
+                        <li>Python environment (venv) with PyTorch, YOLO, etc.</li>
+                        <li>CLI infrastructure</li>
+                        <li>Test suite for core modules</li>
+                        <li>Git workflow</li>
+                    </ul>
+                    <div class="success-criteria">
+                        <h4>✅ Completion Status</h4>
+                        <ul>
+                            <li>Working environment with all dependencies</li>
+                            <li>All prerequisites met</li>
+                            <li>Ready for data curation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="phase">
+                <div class="phase-header">
+                    <div class="phase-marker phase-complete">✓</div>
+                    <div class="phase-title-box">
+                        <h2>Step 2: Data Curation & Download</h2>
+                        <p class="phase-subtitle">Dataset acquisition and preparation</p>
+                    </div>
+                </div>
+                <div class="phase-content">
+                    <h3>Deliverables</h3>
+                    <ul>
+                        <li>4 dataset manifests (tomato, strawberry, apple, kiwi)</li>
+                        <li>All datasets downloaded via Roboflow (~2.3 GB total, 16,613 images)</li>
+                        <li>Converted to YOLO format (bounding boxes + class_ids)</li>
+                        <li>Train/val/test splits created</li>
+                        <li>Pre-flight validation and manifest correction</li>
+                    </ul>
+                    
+                    <h3>Dataset Reference</h3>
+                    <table class="dataset-table">
+                        <thead>
+                            <tr>
+                                <th>Crop</th>
+                                <th>Images</th>
+                                <th>Size</th>
+                                <th>Classes</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Apple</strong></td>
+                                <td>10,379</td>
+                                <td>1.9 GB</td>
+                                <td>1 (flower)</td>
+                                <td>Training</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Strawberry</strong></td>
+                                <td>5,419</td>
+                                <td>329 MB</td>
+                                <td>3 (flower, ripe, unripe)</td>
+                                <td>Training</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tomato</strong></td>
+                                <td>513</td>
+                                <td>23 MB</td>
+                                <td>3 (class0, class1, class2)</td>
+                                <td>Training</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Kiwi</strong></td>
+                                <td>302</td>
+                                <td>18 MB</td>
+                                <td>1 (flower)</td>
+                                <td>Held-out evaluation</td>
+                            </tr>
+                            <tr style="font-weight: bold; background: #e9ecef;">
+                                <td>TOTAL</td>
+                                <td>16,613</td>
+                                <td>2.3 GB</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="success-criteria">
+                        <h4>✅ Completion Status</h4>
+                        <ul>
+                            <li>Data validated and integrity confirmed</li>
+                            <li>Valid YOLO format (bounding boxes + class_ids)</li>
+                            <li>All manifests corrected for actual class counts</li>
+                            <li>Ready for Step 3 baseline evaluation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: COCO Baseline -->
+            <div class="phase">
+                <div class="phase-header">
+                    <div class="phase-marker phase-active">🚀</div>
+                    <div class="phase-title-box">
+                        <h2>Step 3: COCO Baseline Evaluation</h2>
+                        <p class="phase-subtitle">Zero-shot transfer learning baseline</p>
+                    </div>
+                </div>
+                <div class="phase-content">
+                    <h3>Purpose</h3>
+                    <p>Establish performance baseline using YOLOv8n pretrained on COCO dataset, without any additional training or domain transfer.</p>
+                    
+                    <h3>Outputs</h3>
+                    <ul>
+                        <li>mAP@50 scores for each crop on YOLO test split</li>
+                        <li>Baseline metrics documented in results/summary.csv and experiments/registry.csv</li>
+                    </ul>
+                    
+                    <h3>Timeline</h3>
+                    <p><strong>Estimated:</strong> 2-3 hours (mostly PyTorch inference, not training)</p>
+                    
+                    <h3>Key Metrics</h3>
+                    <div class="metrics-box">
+                        mAP@50 (tomato)     = ?<br>
+                        mAP@50 (strawberry) = ?<br>
+                        mAP@50 (apple)      = ?<br>
+                        mAP@50 (kiwi)       = ? [evaluation only]
+                    </div>
+                    
+                    <h3>Deliverables</h3>
+                    <ol>
+                        <li><code>scripts/eval_coco_baseline.py</code> — Script to run zero-shot inference</li>
+                        <li><code>results/baseline_metrics.json</code> — mAP@50 for each crop</li>
+                        <li>Updated <code>results/summary.csv</code> with baseline row</li>
+                    </ol>
+                    
+                    <div class="success-criteria">
+                        <h4>Success Criteria</h4>
+                        <ul>
+                            <li>COCO baseline mAP@50 measured for each crop</li>
+                            <li>Baseline metrics logged to results/summary.csv</li>
+                            <li>Reproducible with scripts/eval_coco_baseline.py</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 4: Transfer Learning -->
+            <div class="phase">
+                <div class="phase-header">
+                    <div class="phase-marker phase-upcoming">⏳</div>
+                    <div class="phase-title-box">
+                        <h2>Step 4: Single-Crop & Cross-Crop Transfer Learning</h2>
+                        <p class="phase-subtitle">Understanding transfer learning gains with harmonization</p>
+                    </div>
+                </div>
+                <div class="phase-content">
+                    <h3>Purpose</h3>
+                    <p>Understand transfer learning gains from (a) single-crop, (b) cross-crop joint training, with label harmonization.</p>
+                    
+                    <h3>Sub-steps</h3>
+                    
+                    <div class="substep">
+                        <strong>1. Harmonize Labels</strong>
+                        <p>Remap all crops to single "flower" class</p>
+                        <ul style="margin-top: 8px;">
+                            <li>Tomato: [class0, class1, class2] → [flower]</li>
+                            <li>Strawberry: [flower, ripe, unripe] → [flower]</li>
+                            <li>Apple: [flower] → [flower] (no change)</li>
+                            <li>Kiwi: [flower] → [flower] (no change)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="substep">
+                        <strong>2. Single-Crop Baselines</strong>
+                        <p>Train YOLOv8n on each crop separately</p>
+                        <ul style="margin-top: 8px;">
+                            <li>Tomato only, Strawberry only, Apple only</li>
+                            <li>Varying label budgets: [25, 50, 100, 200, 500]</li>
+                            <li>3 seeds each for reproducibility</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="substep">
+                        <strong>3. Cross-Crop Joint Training</strong>
+                        <p>Train on combined [tomato + strawberry + apple]</p>
+                        <ul style="margin-top: 8px;">
+                            <li>Same label budgets and seeds</li>
+                            <li>Evaluate on kiwi (held-out crop)</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Outputs</h3>
+                    <ul>
+                        <li>Metrics comparing transfer vs single-crop performance</li>
+                        <li>Understanding transfer learning benefits across crops</li>
+                    </ul>
+                    
+                    <h3>Timeline</h3>
+                    <p><strong>Estimated:</strong> 4-6 weeks (significant training with label budgets × seeds)</p>
+                    
+                    <div class="success-criteria">
+                        <h4>Success Criteria</h4>
+                        <ul>
+                            <li>Harmonized labels created and validated</li>
+                            <li>Single-crop baselines trained and evaluated</li>
+                            <li>Cross-crop joint training compared</li>
+                            <li>Analysis showing transfer learning benefits</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5: Full Pipeline -->
+            <div class="phase">
+                <div class="phase-header">
+                    <div class="phase-marker phase-upcoming">⏳</div>
+                    <div class="phase-title-box">
+                        <h2>Step 5: Full CrossPoll Pipeline</h2>
+                        <p class="phase-subtitle">Active learning for annotation efficiency</p>
+                    </div>
+                </div>
+                <div class="phase-content">
+                    <h3>Purpose</h3>
+                    <p>Active learning for efficient annotation — intelligently select which samples to label based on model uncertainty and diversity.</p>
+                    
+                    <h3>Components</h3>
+                    <ul>
+                        <li><strong>Uncertainty Sampling:</strong> Query samples where model confidence is lowest</li>
+                        <li><strong>Diversity Sampling:</strong> Select diverse samples (feature-space distance)</li>
+                        <li><strong>Annotation Loop:</strong> Iteratively label, retrain, measure improvement</li>
+                        <li><strong>Comparison:</strong> CrossPoll vs random vs uncertainty-only vs diversity-only</li>
+                    </ul>
+                    
+                    <h3>Outputs</h3>
+                    <ul>
+                        <li>Annotation efficiency curves (mAP vs labeled samples)</li>
+                        <li>Speedup factor vs random labeling</li>
+                    </ul>
+                    
+                    <h3>Timeline</h3>
+                    <p><strong>Estimated:</strong> 2-3 weeks (implementation + evaluation)</p>
+                    
+                    <div class="success-criteria">
+                        <h4>Success Criteria</h4>
+                        <ul>
+                            <li>Active learning loop implemented</li>
+                            <li>Annotation efficiency curves generated</li>
+                            <li>CrossPoll vs baselines compared</li>
+                            <li>Paper-ready results and visualizations</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Experiment Config -->
+            <div style="margin-top: 40px; padding: 30px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+                <h2 style="color: #667eea; margin-bottom: 15px;">⚙️ Experiment Configuration</h2>
+                <p><strong>Location:</strong> <code>configs/experiments/crosspoll.yaml</code></p>
+                <div class="metrics-box" style="background: white;">
+model: yolov8n.pt (COCO pretrained)<br>
+train_crops: [tomato, strawberry, apple]<br>
+heldout_crop: kiwi<br>
+label_budgets: [25, 50, 100, 200, 500]<br>
+seeds: [42, 43, 44]<br>
+primary_metric: mAP@50<br><br>
+Tracking:<br>
+  - results/summary.csv<br>
+  - experiments/registry.csv<br>
+  - results/exp_&lt;timestamp&gt;.json
+                </div>
+            </div>
+            
+            <!-- Time Budget -->
+            <div style="margin-top: 40px; padding: 30px; background: #f8f9fa; border-radius: 10px;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">⏱️ Time Budget</h2>
+                <p><strong>Total Weekly:</strong> 3-5 hours/week</p>
+                
+                <h3 style="color: #764ba2; margin-top: 20px; margin-bottom: 10px;">Step 3: COCO Baseline</h3>
+                <div class="budget-bar">
+                    <div class="budget-fill" style="width: 40%;">1-2 hrs</div>
+                </div>
+                <p>Inference only (2-3 weeks)</p>
+                
+                <h3 style="color: #764ba2; margin-top: 20px; margin-bottom: 10px;">Step 4: Transfer Learning</h3>
+                <div class="budget-bar">
+                    <div class="budget-fill" style="width: 70%;">2-3 hrs</div>
+                </div>
+                <p>Significant training overhead (4-6 weeks)</p>
+                
+                <h3 style="color: #764ba2; margin-top: 20px; margin-bottom: 10px;">Step 5: CrossPoll Pipeline</h3>
+                <div class="budget-bar">
+                    <div class="budget-fill" style="width: 50%;">2-3 hrs</div>
+                </div>
+                <p>Implementation + evaluation (2-3 weeks)</p>
+            </div>
+            
+            <!-- File Structure -->
+            <div style="margin-top: 40px; padding: 30px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #667eea;">
+                <h2 style="color: #667eea; margin-bottom: 15px;">📁 Project File Structure</h2>
+                <div class="file-tree">
+learning/<br>
+├── README.md          ← Learning journal<br>
+└── README.html        ← This file (HTML)<br><br>
+configs/<br>
+├── datasets/<br>
+│   ├── tomato.yaml<br>
+│   ├── strawberry.yaml<br>
+│   ├── apple.yaml<br>
+│   └── kiwi.yaml<br>
+└── experiments/<br>
+    └── crosspoll.yaml<br><br>
+scripts/<br>
+├── eval_coco_baseline.py     ← Step 3 (TBD)<br>
+├── harmonize_labels.py       ← Step 4 (TBD)<br>
+└── active_learning_loop.py   ← Step 5 (TBD)<br><br>
+results/<br>
+├── summary.csv              ← All experiments<br>
+└── exp_&lt;timestamp&gt;.json     ← Per-experiment<br><br>
+data/<br>
+├── tomato/     → images/labels<br>
+├── strawberry/ → images/labels<br>
+├── apple/      → images/labels<br>
+└── kiwi/       → images/labels
+                </div>
+            </div>
+            
+            <!-- Next Actions -->
+            <div style="margin-top: 40px; padding: 30px; background: #d4edda; border-radius: 10px; border-left: 4px solid #155724;">
+                <h2 style="color: #155724; margin-bottom: 20px;">✅ Next Actions</h2>
+                
+                <h3 style="color: #155724; margin-top: 15px;">Before Step 3:</h3>
+                <div style="margin-left: 20px;">
+                    <div style="margin: 8px 0;">✓ Verify all datasets downloaded and validated</div>
+                    <div style="margin: 8px 0;">✓ Correct manifest inconsistencies (tomato class mismatch)</div>
+                    <div style="margin: 8px 0;">✓ Commit data quality fixes to git</div>
+                    <div style="margin: 8px 0;">✓ Update learning materials and roadmap</div>
+                </div>
+                
+                <h3 style="color: #155724; margin-top: 20px;">To Start Step 3:</h3>
+                <div style="margin-left: 20px;">
+                    <div style="margin: 8px 0;">→ Create <code>scripts/eval_coco_baseline.py</code></div>
+                    <div style="margin: 8px 0;">→ Run YOLOv8n zero-shot inference on test splits</div>
+                    <div style="margin: 8px 0;">→ Log mAP@50 results to <code>results/summary.csv</code></div>
+                    <div style="margin: 8px 0;">→ Verify baseline metrics make sense (&gt;0 mAP for all crops)</div>
+                </div>
+            </div>
+            
+            <!-- FAQ -->
+            <div style="margin-top: 40px; padding: 30px; background: #e7f3ff; border-radius: 10px; border-left: 4px solid #0066cc;">
+                <h2 style="color: #0066cc; margin-bottom: 20px;">❓ Questions & Clarifications</h2>
+                
+                <div style="margin-bottom: 25px;">
+                    <p style="font-weight: bold; color: #0066cc;">Q: Why not train on all 4 crops together in Step 4?</p>
+                    <p style="margin-top: 8px;">A: Kiwi is held-out for unbiased evaluation. Training exclusively on [tomato, strawberry, apple] isolates the cross-crop transfer effect.</p>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <p style="font-weight: bold; color: #0066cc;">Q: What if COCO baseline is already very high (>80 mAP)?</p>
+                    <p style="margin-top: 8px;">A: Still valuable — shows transfer learning ceiling. Active learning might have limited room to help, but understanding this bound is crucial for the paper.</p>
+                </div>
+                
+                <div>
+                    <p style="font-weight: bold; color: #0066cc;">Q: When do we finalize the research paper?</p>
+                    <p style="margin-top: 8px;">A: After Steps 3-5 complete, with results and plots integrated into LaTeX manuscript in paper/manuscript/paper.tex</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p><strong>CrossPoll Project Roadmap</strong></p>
+            <p>Last Updated: March 25, 2026</p>
+            <div class="nav-links">
+                <a href="learning/README.html">← Learning Journal</a>
+                <span>|</span>
+                <a href="ROADMAP.md">MD Version</a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
