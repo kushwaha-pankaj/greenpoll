@@ -10,12 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Roboflow dataset config: {crop: (workspace/project, format)}
+# Roboflow dataset config: {crop: (workspace/project/version, format)}
 DATASETS = {
-    'tomato': ('stefs/tomato-flower-detection-zmeju', 'yolov8'),
-    'strawberry': ('noc/strawberry-flower', 'yolov8'),
-    'apple': ('flowers-rhffp/apple-flower-sahi', 'yolov8'),
-    'kiwi': ('timm-brx5x/kiwi-flower-recognition', 'yolov8'),
+    'tomato': ('stefs/tomato-flower-detection-zmeju/1', 'yolov8'),
+    'strawberry': ('noc/strawberry-flower/1', 'yolov8'),
+    'apple': ('flowers-rhffp/apple-flower-sahi/1', 'yolov8'),
+    'kiwi': ('timm-brx5x/kiwi-flower-recognition/1', 'yolov8'),
 }
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
@@ -26,16 +26,16 @@ def download_crop(crop_name: str, api_key: str = None) -> bool:
         print(f'Unknown crop: {crop_name}. Choose from: {list(DATASETS.keys())}')
         return False
     
-    project, fmt = DATASETS[crop_name]
+    dataset_url, fmt = DATASETS[crop_name]
     out_path = DATA_DIR / crop_name
     out_path.mkdir(parents=True, exist_ok=True)
     
-    print(f'Downloading {crop_name} from {project}...')
+    print(f'Downloading {crop_name} from {dataset_url}...')
     cmd = [
         'roboflow', 'download',
-        '--project', project,
-        '--format', fmt,
-        '--location', str(out_path),
+        dataset_url,
+        '-f', fmt,
+        '-l', str(out_path),
     ]
     if api_key:
         cmd.extend(['--api-key', api_key])
