@@ -38,6 +38,40 @@ export ROBOFLOW_API_KEY="your_api_key_here"
 python scripts/download_datasets.py --all
 ```
 
+**Or use the setup script** (interactive):
+```bash
+bash scripts/setup_roboflow_auth.sh
+python scripts/download_datasets.py --all
+```
+
+## Troubleshooting
+
+### API Key Not Found / Invalid Key
+**Error**: `This API key does not exist (or has been revoked)`
+
+**Solution**:
+1. Log in to [roboflow.com](https://roboflow.com)
+2. Go to **Settings → API Keys**
+3. Under "Private API Key", copy the **full key** (ensure it's not truncated)
+4. Generate a new key if needed by clicking the refresh icon
+5. Try again:
+   ```bash
+   python scripts/download_datasets.py --all --api-key YOUR_NEW_KEY
+   ```
+
+### Roboflow CLI Not Installed
+**Error**: `roboflow CLI not found`
+
+**Solution**:
+```bash
+pip install roboflow
+```
+
+### Authentication Fails
+1. Double-check your API key is fully copied (not truncated in the screenshot)
+2. Verify your account has Public Plan (minimum requirement)
+3. Try regenerating a new key in the Roboflow dashboard
+
 ## Dataset Output
 
 Datasets are downloaded to `data/{crop_name}/` in YOLO format:
