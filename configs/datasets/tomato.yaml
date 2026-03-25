@@ -1,0 +1,12 @@
+name: tomato-flower-detection-zmeju
+source: https://universe.roboflow.com/stefs/tomato-flower-detection-zmeju
+images: 513
+task: detect
+format: yolov5
+classes:
+  - class0
+  - class1
+  - class2
+num_classes: 3
+license: CC-BY-4.0
+notes: "Roboflow exported as 3-class dataset. Actual flower class may be subset; will harmonize all crops to single 'flower' class during Step 4 joint training."

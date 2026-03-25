@@ -1,0 +1,11 @@
+name: kiwi-flower-recognition
+source: https://universe.roboflow.com/timm-brx5x/kiwi-flower-recognition
+images: 302
+task: detect
+format: yolov5
+classes:
+  - flower
+num_classes: 1
+role: heldout
+license: MIT
+notes: Held-out crop for CrossPoll evaluation. Small dataset (302 images) used for few-shot adaptation; label_budgets in crosspoll.yaml control revealed labels.

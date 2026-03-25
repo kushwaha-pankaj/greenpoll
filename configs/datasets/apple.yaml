@@ -1,0 +1,10 @@
+name: apple-flower-sahi
+source: https://universe.roboflow.com/flowers-rhffp/apple-flower-sahi
+images: 10379
+task: detect
+format: yolov5
+classes:
+  - flower
+num_classes: 1
+license: CC-BY-4.0
+notes: SAHI-sliced high-resolution orchard tiles. Watch for scale/tiling differences during training.

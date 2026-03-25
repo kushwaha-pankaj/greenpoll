@@ -1,0 +1,12 @@
+name: noc-strawberry-flower
+source: https://universe.roboflow.com/noc/strawberry-flower
+images: 5419
+task: detect
+format: yolov5
+classes:
+  - flower
+  - ripe
+  - unripe
+num_classes: 3
+license: CC-BY-4.0
+notes: Multi-class (flower/ripe/unripe). Will harmonize to single 'flower' class during Step 4 joint training for unified detector.
