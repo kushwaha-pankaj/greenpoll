@@ -30,7 +30,8 @@ runs/
 weights/
 *.pt
 *.onnx
-results/
+results/*
+!results/summary.csv
 
 # Node (used only by paper conversion utilities)
 node_modules/
