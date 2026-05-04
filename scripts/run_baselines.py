@@ -259,11 +259,22 @@ def run_single_experiment(
     return row
 
 
+SUMMARY_HEADER = [
+    "result_id", "run_id", "method", "heldout_crop", "n_labels",
+    "mAP50", "precision", "recall", "f1", "latency_ms",
+    "model_size_mb", "train_time_min", "split_version", "seed",
+]
+
+
 def append_results(row: dict) -> None:
-    """Append a result row to summary.csv."""
+    """Append a result row to summary.csv (creating it with a header if absent)."""
     result_id = f"r_{row['run_id']}"
+    new_file = not RESULTS_CSV.exists()
+    RESULTS_CSV.parent.mkdir(parents=True, exist_ok=True)
     with open(RESULTS_CSV, "a", newline="") as f:
         writer = csv.writer(f)
+        if new_file:
+            writer.writerow(SUMMARY_HEADER)
         writer.writerow([
             result_id,
             row["run_id"],
