@@ -191,6 +191,14 @@ def run_single_experiment(
         model = YOLO("yolov8n.yaml")  # architecture only, random init
     elif method == "coco_transfer":
         model = YOLO("yolov8n.pt")  # COCO pretrained
+    elif method == "crosspoll":
+        joint_ckpt = ROOT / "runs" / "joint" / "pretrain" / "weights" / "best.pt"
+        if not joint_ckpt.exists():
+            raise FileNotFoundError(
+                f"CrossPoll joint pretrain checkpoint not found: {joint_ckpt}\n"
+                f"Run `python scripts/pretrain_joint.py` first."
+            )
+        model = YOLO(str(joint_ckpt))
     else:
         raise ValueError(f"Unknown method: {method}")
 
@@ -322,8 +330,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run Step 3 baselines on kiwi.")
     parser.add_argument(
         "--methods", nargs="+", default=["scratch", "coco_transfer"],
-        choices=["scratch", "coco_transfer"],
-        help="Baseline methods to run",
+        choices=["scratch", "coco_transfer", "crosspoll"],
+        help="Methods to run. 'crosspoll' requires runs/joint/pretrain/weights/best.pt",
     )
     parser.add_argument(
         "--seeds", nargs="+", type=int, default=DEFAULT_SEEDS,
