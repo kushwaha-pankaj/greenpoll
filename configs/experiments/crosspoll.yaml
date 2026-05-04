@@ -9,14 +9,20 @@ data:
   label_budgets: [25, 50, 100, 200, 500]
 
 training:
-  epochs: 300
-  patience: 20
+  epochs: 150
+  patience: 15
   imgsz: 640
-  batch: -1
+  batch: 16
   optimizer: AdamW
   amp: true
+  cache: "ram"
+  cos_lr: true
+  workers: 4
+  deterministic: false
+  plots: false
   lr0_joint: 0.001
   lr0_finetune: 0.0001
+  device: "mps"
 
 evaluation:
   primary_metric: mAP50

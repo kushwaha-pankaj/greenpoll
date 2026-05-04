@@ -1,0 +1,66 @@
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage[utf-8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{multirow}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+
+% For arXiv, we don't use two-column layout
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Title
+\title{CrossPoll: Sample-Efficient Cross-Crop Flower Detection via Multi-Source Transfer Learning for Robotic Pollination}
+
+% Authors
+\author{Pankaj Kushwaha\\
+Department of Computer Science and Engineering}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% Abstract
+\input{sections/abstract.tex}
+
+% Main content
+\section{Introduction}
+\input{sections/introduction.tex}
+
+\section{Related Work}
+\input{sections/related_work.tex}
+
+\section{Methodology}
+\input{sections/methods.tex}
+
+\section{Experimental Setup}
+\input{sections/experiments.tex}
+
+\section{Results}
+\input{sections/results.tex}
+
+\section{Discussion}
+\input{sections/discussion.tex}
+
+\section{Conclusion}
+\input{sections/conclusion.tex}
+
+% References
+\bibliographystyle{ieeetr}
+\bibliography{references.bib}
+
+\end{document}

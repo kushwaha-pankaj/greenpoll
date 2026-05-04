@@ -2,23 +2,31 @@
 
 GreenPoll is an open-source research software project for greenhouse pollination robotics.
 
-Version 1 focuses on a software-only pipeline:
-- flower detection
-- target prioritization
-- path planning
-- simulation and evaluation
+**CrossPoll** is the first study: a multi-crop transfer-learning framework for flower detection, optimized for fast adaptation to a new crop with few labels.
 
-## Status
-Early scaffold.
+## Current Status
 
-## Planned modules
+- **Step 1** ✅ Environment setup (Python 3.14, venv, ultralytics 8.4.26)
+- **Step 2** ✅ Data curation — 4 crop datasets downloaded (16,613 images, 2.3 GB YOLO format)
+- **Step 3** 🔄 COCO baseline evaluation — in progress
+
+## Datasets
+
+| Crop | Images | Classes | Role |
+|------|--------|---------|------|
+| Apple | 10,379 | 1 (flower) | Training |
+| Strawberry | 5,419 | 3 (flower, ripe, unripe) | Training |
+| Tomato | 513 | 3 (class0, class1, class2) | Training |
+| Kiwi | 302 | 1 (flower) | Held-out evaluation |
+
+## Modules
 - `greenpoll.data`: dataset loading and validation
 - `greenpoll.detect`: flower detection baselines
-- `greenpoll.prioritize`: target ranking
-- `greenpoll.plan`: route planning
-- `greenpoll.sim`: greenhouse-row simulation
 - `greenpoll.eval`: metrics
 - `greenpoll.viz`: visual outputs
+- `greenpoll.plan`: route planning (future)
+- `greenpoll.prioritize`: target ranking (future)
+- `greenpoll.sim`: greenhouse-row simulation (future)
 - `greenpoll.cli`: command-line tools
 
 ## Install

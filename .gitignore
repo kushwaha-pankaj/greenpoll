@@ -31,3 +31,6 @@ weights/
 *.pt
 *.onnx
 results/
+
+# Node (used only by paper conversion utilities)
+node_modules/

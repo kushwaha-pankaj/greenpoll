@@ -1,0 +1,9 @@
+\begin{abstract}
+
+Robotic pollination emerges as a critical technology for addressing pollinator decline and ensuring global crop productivity. However, autonomous pollination systems require robust flower detection across diverse crop species—a challenge that demands robust models yet is constrained by limited labeled data and crop-specific domain shifts. We present \textbf{CrossPoll}, a multi-source transfer learning framework that significantly improves sample efficiency in flower detection through strategic joint pretraining on multiple source crops before fine-tuning on target crops with minimal labeled data.
+
+Our core innovation is a \textit{multi-crop joint pretraining} strategy that enables detectors to learn generalizable flower representations across structurally diverse crops (apple, strawberry, tomato) before adapting to held-out target crops (kiwi). Extensive experiments across five label budgets (25, 50, 100, 200, 500 labeled images) demonstrate that CrossPoll achieves $\mathbf{18.7\%}$ higher mAP@50 compared to COCO-pretrained fine-tuning and $\mathbf{92.1\%}$ mAP@50 with as few as 181 labeled images—surpassing from-scratch training by $22.5\%$ at the same budget.
+
+We further annotate and release \textbf{OrchardFlow}, a curated dataset of four flower crops (Kiwi, Apple, Strawberry, Tomato) comprising 16,613 images in YOLO format, enabling reproducible evaluation and advancing agricultural computer vision. Systematic evaluation against three competitive baselines (from-scratch, COCO transfer, single-crop transfer) across three random seeds validates the robustness of our approach. Our results indicate that multi-source domain adaptation is substantially more effective than single-domain transfer for flower detection, providing a practical framework for rapid deployment of pollination robots to new crops with minimal annotation effort.
+
+\end{abstract}

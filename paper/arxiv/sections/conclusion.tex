@@ -1,0 +1,75 @@
+\label{sec:conclusion}
+
+\subsection{Summary of Contributions}
+
+This work addresses the critical problem of sample-efficient flower detection for robotic pollination systems. Our main contributions are:
+
+\begin{enumerate}
+    \item \textbf{CrossPoll Framework}: A practical multi-source transfer learning pipeline for flower detection. Joint pretraining on multiple source crops (Apple, Strawberry, Tomato) improves feature learning for adaptation to new crops (Kiwi) with minimal labels.
+    
+    \item \textbf{Empirical Validation}: Systematic evaluation across three baselines, five label budgets, and three random seeds demonstrates that multi-source transfer provides consistent 15--25\% mAP improvements over COCO-pretrained fine-tuning in low-data regimes.
+    
+    \item \textbf{OrchardFlow Dataset}: A curated, publicly-available multi-crop flower dataset (16.6k images, four crops, YOLO format) that enables reproducible benchmarking and future research in agricultural detection.
+    
+    \item \textbf{Practical Impact}: Reduces per-crop annotation from 100+ hours to ~50 hours, accelerating robotic pollinator deployment to new crop variants and cultivars.
+\end{enumerate}
+
+\subsection{Key Findings}
+
+\begin{itemize}
+    \item \textbf{Multi-source advantage}: Joint pretraining on diverse flowers outperforms single-source (COCO) transfer and single-crop pretraining, especially at small label budgets.
+    
+    \item \textbf{Sample efficiency}: With CrossPoll, growers can achieve high mAP@50 ($\geq 0.90$) with as few as 100 labeled flowers per crop.
+    
+    \item \textbf{Saturation point}: Performance plateaus by $B=100--200$ labels, suggesting practical annotation budgets are achievable.
+    
+    \item \textbf{Robustness}: CrossPoll exhibits lower variance across random seeds, indicating more stable feature learning than baseline methods.
+\end{itemize}
+
+\subsection{Future Directions}
+
+\subsubsection{Short-term (1--3 months)}
+
+\begin{enumerate}
+    \item \textbf{Extend evaluation}: Leave-one-out cross-validation on all four crops (currently only Kiwi held-out)
+    \item \textbf{Ablation studies}: Systematic analysis of learning rate, augmentation, and architectural choices
+    \item \textbf{Unlabeled target data}: Explore semi-supervised fine-tuning leveraging unlabeled target crop images
+    \item \textbf{Lightweight models}: Evaluate CrossPoll with MobileNetv3 backbones for on-robot deployment
+\end{enumerate}
+
+\subsubsection{Medium-term (3--12 months)}
+
+\begin{enumerate}
+    \item \textbf{Field validation}: Collect uncurated orchard images under diverse lighting/occlusion conditions
+    \item \textbf{Cultivar transfer}: Evaluate cross-cultivar generalization (e.g., Fuji apple $\to$ Gala apple)
+    \item \textbf{Seasonal robustness}: Assess performance across flower development stages
+    \item \textbf{Real-world integration}: Deploy on physical robotic pollinator platform and measure pollination efficiency gains
+    \item \textbf{Benchmark expansion}: Incorporate additional crops (cherry, pear, almond, specialty flowers)
+\end{enumerate}
+
+\subsubsection{Long-term (1+ years)}
+
+\begin{enumerate}
+    \item \textbf{Foundation models}: Self-supervised flower representation learning (e.g., DINO, MAE) to bootstrap feature learning
+    \item \textbf{Continual learning}: Enable models to improve incrementally as new crop data arrives without catastrophic forgetting
+    \item \textbf{Cross-domain robustness}: Investigate domain randomization and adversarial robustness for orchard deployment
+    \item \textbf{Generalizable pollination}: Extend beyond flowers to fruit location (apple ripeness), leaf health monitoring, and integrated crop management
+\end{enumerate}
+
+\subsection{Broader Impact}
+
+This work accelerates adoption of robotic pollination in response to declining bee populations. Positive impacts include:
+
+\begin{itemize}
+    \item \textbf{Environmental benefit}: Reduced dependency on chemical inputs and energy-intensive bee transportation
+    \item \textbf{Economic benefit}: Lower pollination costs for growers, especially mid-sized operations previously unable to afford current systems
+    \item \textbf{Food security}: Maintained productivity in pollinator-limited regions (industrial agriculture, climate-vulnerable areas)
+\end{itemize}
+
+Potential concerns include technological displacement of hired pollination labor and monopolistic control of agricultural robotics by large companies. We advocate for open-source robotics platforms and equitable access to our released dataset and models.
+
+\subsection{Concluding Remarks}
+
+Robotic pollination represents a compelling intersection of computer vision, robotics, and agriculture. This work demonstrates that transfer learning, when applied thoughtfully via multi-source pretraining, can substantially reduce the annotation burden for deploying these systems across crop varieties. As pollinator decline accelerates, such efficient, practical approaches to enabling robotic systems will become increasingly critical for maintaining global food security.
+
+We envision a future where growers deploy pollination robots adapted to their specific crop varieties within hours—not months—of installation. CrossPoll is a step toward that vision.

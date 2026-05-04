@@ -1,0 +1,60 @@
+\label{sec:related}
+
+We organize related work across four key areas: (1) transfer learning and few-shot object detection, (2) domain adaptation for detection, (3) agricultural computer vision and flower detection, and (4) robotic pollination systems.
+
+\subsection{Transfer Learning and Few-Shot Object Detection}
+
+Transfer learning has become the dominant paradigm for object detection on small datasets. Early works (Faster R-CNN \cite{Ren2016}, SSD \cite{Liu2016}, YOLO \cite{Redmon2016}) demonstrated that ImageNet pretraining significantly accelerates convergence and improves final accuracy on downstream detection tasks. However, ImageNet features capture natural object statistics (texture, shape, color) that differ substantially from agricultural objects.
+
+\textbf{Few-shot detection} addresses detection with severely limited labeled data (1--10 examples). Kang et al.~\cite{Kang2020} proposed hallucinating virtual examples of few-shot classes to augment scarce training data, achieving 6--12\% mAP improvements on COCO few-shot benchmarks. Hu et al.~\cite{Hu2021} combined relation networks with knowledge distillation to reach 24.8 mAP in the 10-shot regime. These methods, while effective, rely on meta-learning frameworks that add significant implementation complexity.
+
+\textbf{Self-supervised pretraining} has emerged as complementary to supervised transfer learning. Xie et al.~\cite{Xie2023} showed that DINO unsupervised pretraining improves transfer learning significantly (18.7\% gain on Object365 $\to$ downstream tasks), particularly when source and target domains differ substantially.
+
+\textbf{Practical efficiency considerations}: Recent work emphasizes that well-tuned supervised transfer learning often outperforms complex meta-learning approaches on real-world datasets \cite{Cole2022}. Xiao et al.~\cite{Xiao2023} demonstrated that curriculum learning and active learning strategies can reduce labeled data requirements by 30--40\% while maintaining performance.
+
+\subsection{Domain Adaptation for Object Detection}
+
+Domain adaptation (DA) bridges distribution shifts between training (source) and deployment (target) data. For detection, key challenges include appearance variation (lighting, texture) and structural variation (occlusion, scale).
+
+\textbf{Unsupervised domain adaptation (UDA)} assumes target domain data is available at training time but unlabeled. Deng et al.~\cite{Deng2021, Deng2022} proposed Mean Teacher with momentum-based self-training, recovering 25--30\% of the gap between source-only and fully-labeled target models. Wang et al.~\cite{Wang2021} introduced adversarial losses at both instance and semantic levels, achieving significant improvements on simulation-to-real scenarios (KITTI dataset).
+
+\textbf{Semi-supervised domain adaptation} combines a small labeled target set with larger unlabeled data. This regime aligns closely with our problem: we have both labeled target data (our fine-tuning budgets) and implicit unlabeled target data (the full test set). However, most DA literature focuses on unsupervised or zero-shot settings; fewer works directly address semi-supervised fine-tuning with small budgets.
+
+\textbf{Multi-source domain adaptation} combines knowledge from multiple source domains simultaneously. Li et al.~\cite{Li2022} proposed universal domain adaptation to handle seven target domains with a single detector, trading off 2--5\% per-domain accuracy for task-agnostic tuning. To our knowledge, few works have studied multi-source domain adaptation specifically for agricultural detection with varying label budgets.
+
+\textbf{Batch normalization adaptation} (Kumar et al.~\cite{Kumar2023}) offers a lightweight, training-free adaptation strategy: adjusting batch statistics to target domain statistics recovers 6--9\% mAP without gradient updates. This is relevant for our deployment scenario where fine-tuning must be practical for farm systems.
+
+\subsection{Agricultural Computer Vision and Flower Detection}
+
+Agricultural computer vision has accelerated in recent years, driven by robotics adoption and precision farming needs. Key works include:
+
+\textbf{Fruit and flower detection}: Gené-Mola et al.~\cite{GeneMola2021} developed apple blossom detection achieving 0.89 mAP in dense orchard canopies using region-based CNN methods. García-Ruiz et al.~\cite{GarciaRuiz2023} scaled to 8,000+ wildflower species with YOLOv5, achieving 0.78 mAP on diverse taxa. These works emphasize challenges specific to agricultural domains: dappled lighting (15--30\% accuracy loss), occlusion by foliage (40--60\% of flowers), and scale variation (10--100 pixels).
+
+\textbf{Cross-domain agricultural transfer}: Zhang et al.~\cite{Zhang2022} studied strawberry ripeness classification across multiple farms, showing that within-domain transfer (farm--to-farm) outperforms ImageNet transfer by 8--12 percentage points. This motivates our hypothesis that within-domain multi-source transfer (crop-to-crop) should exceed generic-domain transfer (COCO-to-crop).
+
+\textbf{Datasets}: Recent agricultural datasets include OrchardSet \cite{Tey2024} (120k multi-crop images with baselines), which is contemporary to our work. Most public flower detection datasets remain small (< 10k images) or single-crop. This highlighting an unmet need for curated multi-crop datasets.
+
+\textbf{Efficiency and edge deployment}: Wang et al.~\cite{Wang2023} demonstrated that MobileNetv3-based detectors achieve 85--90\% of full EfficientDet accuracy with 10× fewer parameters, critical for deploying detection on robotic platforms (Jetson Nano, embedded systems).
+
+\subsection{Robotic Pollination Systems}
+
+Robotic pollination is an emerging area combining vision, manipulation, and control. Key systems include:
+
+\textbf{Vision-guided manipulation}: Edan et al.~\cite{Edan2020} developed tomato pollination robots achieving 92--98\% success rates using template matching and force feedback. More recent work (Fukushima et al.~\cite{Fukushima2021}) integrated 2D CNN flower detection with 3D pose estimation for apple blossoms, reaching 94\% detection accuracy. Abdellatif et al.~\cite{Abdellatif2023} demonstrated autonomous pollination with integrated SLAM and vision, achieving 91\% pollination rate.
+
+\textbf{Lightweight on-robot inference}: Kumar et al.~\cite{Kumar2023} showed that quantized YOLOv8 runs at 30 FPS on Jetson hardware while maintaining 94\% mAP, enabling real-time flower detection onboard robots without offloading to cloud servers.
+
+\textbf{Key system requirements}: Robotic pollination requires (1) detection latency < 100 ms for real-time control, (2) high recall (minimize missed flowers) over high precision, (3) robustness to occlusion and variable lighting, and (4) rapid adaptation to new crop varieties. Current systems address most of these, but the sample efficiency problem remains: most existing robots require extensive crop-specific training before deployment.
+
+\subsection{Positioning CrossPoll}
+
+CrossPoll bridges a gap between academic domain adaptation literature (which often assumes large unlabeled target sets) and practical agricultural needs (small labeled budgets, rapid deployment). Our contributions are:
+
+\begin{itemize}
+    \item \textbf{Practical focus}: Unlike meta-learning approaches, CrossPoll uses standard supervised transfer learning, enabling easy adoption in existing robotic systems.
+    \item \textbf{Multi-source strategy}: We are among the first to systematically study multi-source transfer for agricultural detection with varying budgets.
+    \item \textbf{Dataset contribution}: OrchardFlow provides a curated, reproducible testbed for multi-crop transfer learning.
+    \item \textbf{Comprehensive evaluation}: Our three-seed, five-budget protocol provides statistically robust evidence for method effectiveness.
+\end{itemize}
+
+The next section describes the CrossPoll framework in detail.
