@@ -72,7 +72,10 @@ def main() -> None:
             dst_split = JOINT_DIR / crop / split
             dst_split.mkdir(parents=True, exist_ok=True)
             (dst_split / "labels").mkdir(exist_ok=True)
-            os.symlink(src_img.resolve(), dst_split / "images")
+            # Copy (not symlink): Ultralytics resolves symlinks before deriving
+            # label paths, which would bypass our harmonized labels and read
+            # the originals. Copy keeps both image and label dirs co-located.
+            shutil.copytree(src_img, dst_split / "images")
 
             n_files = n_anns = 0
             for lbl in src_lbl.glob("*.txt"):
