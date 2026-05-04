@@ -228,6 +228,7 @@ def run_single_experiment(
     metrics = eval_model.val(data=str(data_yaml), split="test")
 
     mAP50 = float(metrics.box.map50)
+    mAP50_95 = float(metrics.box.map)
     precision = float(metrics.box.mp)
     recall = float(metrics.box.mr)
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
@@ -242,6 +243,7 @@ def run_single_experiment(
         "n_labels": actual_budget,
         "seed": seed,
         "mAP50": round(mAP50, 4),
+        "mAP50_95": round(mAP50_95, 4),
         "precision": round(precision, 4),
         "recall": round(recall, 4),
         "f1": round(f1, 4),
@@ -250,8 +252,9 @@ def run_single_experiment(
         "checkpoint_path": str(best_ckpt.relative_to(ROOT)),
     }
 
-    print(f"\n  ✓ mAP50={row['mAP50']}  P={row['precision']}  R={row['recall']}  "
-          f"F1={row['f1']}  time={row['train_time_min']}min")
+    print(f"\n  ✓ mAP50={row['mAP50']}  mAP50-95={row['mAP50_95']}  "
+          f"P={row['precision']}  R={row['recall']}  F1={row['f1']}  "
+          f"time={row['train_time_min']}min")
 
     # ── Cleanup temp data ──────────────────────────────────────────
     shutil.rmtree(tmp_dir)
@@ -261,7 +264,7 @@ def run_single_experiment(
 
 SUMMARY_HEADER = [
     "result_id", "run_id", "method", "heldout_crop", "n_labels",
-    "mAP50", "precision", "recall", "f1", "latency_ms",
+    "mAP50", "mAP50_95", "precision", "recall", "f1", "latency_ms",
     "model_size_mb", "train_time_min", "split_version", "seed",
 ]
 
@@ -282,6 +285,7 @@ def append_results(row: dict) -> None:
             row["heldout_crop"],
             row["n_labels"],
             row["mAP50"],
+            row["mAP50_95"],
             row["precision"],
             row["recall"],
             row["f1"],
