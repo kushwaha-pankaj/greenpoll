@@ -29,6 +29,7 @@ datasets/
 runs/
 weights/
 *.pt
+!checkpoints/*.pt
 *.onnx
 results/*
 !results/summary.csv

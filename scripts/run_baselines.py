@@ -196,12 +196,20 @@ def run_single_experiment(
     elif method == "coco_transfer":
         model = YOLO("yolov8n.pt")  # COCO pretrained
     elif method == "crosspoll":
-        joint_ckpt = ROOT / "runs" / "joint" / "pretrain" / "weights" / "best.pt"
-        if not joint_ckpt.exists():
+        # Prefer a fresh local pretrain; fall back to the pinned checkpoint
+        # tracked in git (lets a fresh Kaggle clone skip the 90 min pretrain).
+        candidates = [
+            ROOT / "runs" / "joint" / "pretrain" / "weights" / "best.pt",
+            ROOT / "checkpoints" / "joint_pretrain.pt",
+        ]
+        joint_ckpt = next((p for p in candidates if p.exists()), None)
+        if joint_ckpt is None:
             raise FileNotFoundError(
-                f"CrossPoll joint pretrain checkpoint not found: {joint_ckpt}\n"
-                f"Run `python scripts/pretrain_joint.py` first."
+                "CrossPoll joint pretrain checkpoint not found. Either:\n"
+                f"  - run scripts/pretrain_joint.py to create {candidates[0]}, or\n"
+                f"  - place a pinned ckpt at {candidates[1]} (one is committed in git)."
             )
+        print(f"  CrossPoll loading pretrain from: {joint_ckpt.relative_to(ROOT)}")
         model = YOLO(str(joint_ckpt))
     else:
         raise ValueError(f"Unknown method: {method}")
