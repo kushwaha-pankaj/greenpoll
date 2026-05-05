@@ -150,12 +150,16 @@ def run_single_experiment(
     seed: int,
     budget: int,
     dry_run: bool = False,
+    freeze: int = 0,
+    patience_override: int | None = None,
+    lr0_override: float | None = None,
 ) -> dict:
     """Train one model and return metrics dict."""
-    run_id = f"{method}_kiwi_b{budget}_s{seed}"
+    method_tag = f"{method}_freeze{freeze}" if freeze > 0 else method
+    run_id = f"{method_tag}_kiwi_b{budget}_s{seed}"
     print(f"\n{'='*60}")
     print(f"  {run_id}")
-    print(f"  method={method}  budget={budget}  seed={seed}")
+    print(f"  method={method}  freeze={freeze}  budget={budget}  seed={seed}")
     print(f"{'='*60}")
 
     actual_budget = min(budget, 181)  # kiwi train has 181 images
@@ -203,17 +207,17 @@ def run_single_experiment(
         raise ValueError(f"Unknown method: {method}")
 
     # ── Train ──────────────────────────────────────────────────────
-    project_dir = RUNS_DIR / "step3" / method
+    project_dir = RUNS_DIR / "step3" / method_tag
     t0 = time.time()
     train_kwargs = dict(
         data=str(data_yaml),
         epochs=EPOCHS,
-        patience=PATIENCE,
+        patience=patience_override if patience_override is not None else PATIENCE,
         imgsz=IMGSZ,
         batch=BATCH,
         optimizer=OPTIMIZER,
         amp=AMP,
-        lr0=LR_FINETUNE,
+        lr0=lr0_override if lr0_override is not None else LR_FINETUNE,
         cache=CACHE,
         cos_lr=COS_LR,
         workers=WORKERS,
@@ -227,6 +231,8 @@ def run_single_experiment(
     )
     if DEVICE is not None:
         train_kwargs["device"] = DEVICE
+    if freeze > 0:
+        train_kwargs["freeze"] = freeze
     results = model.train(**train_kwargs)
     train_time = (time.time() - t0) / 60.0  # minutes
 
@@ -246,7 +252,7 @@ def run_single_experiment(
 
     row = {
         "run_id": run_id,
-        "method": method,
+        "method": method_tag,  # method or method_freezeN — keeps CSV groupable
         "heldout_crop": "kiwi",
         "n_labels": actual_budget,
         "seed": seed,
@@ -345,6 +351,19 @@ def main():
         "--dry-run", action="store_true",
         help="Print what would run without training",
     )
+    parser.add_argument(
+        "--freeze", type=int, default=0,
+        help="Freeze first N layers (Ultralytics 'freeze'). 10 freezes the YOLOv8n backbone. "
+             "When >0, run_id is suffixed with _freeze{N} so runs don't collide with the un-frozen baseline.",
+    )
+    parser.add_argument(
+        "--patience-override", type=int, default=None,
+        help="Override patience from YAML (default in YAML is 15)",
+    )
+    parser.add_argument(
+        "--lr0-override", type=float, default=None,
+        help="Override lr0_finetune from YAML (default in YAML is 0.0001)",
+    )
     args = parser.parse_args()
 
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
@@ -359,6 +378,9 @@ def main():
     print(f"  Methods: {args.methods}")
     print(f"  Seeds:   {args.seeds}")
     print(f"  Budgets: {args.budgets}")
+    print(f"  Freeze:  {args.freeze}")
+    print(f"  Patience override: {args.patience_override}")
+    print(f"  lr0 override:      {args.lr0_override}")
     print(f"  Device:  {DEVICE or 'auto'}")
     print(f"  Total runs: {total}")
     print(f"  Already completed: {len(completed_ids)}")
@@ -366,13 +388,20 @@ def main():
     for method in args.methods:
         for seed in args.seeds:
             for budget in args.budgets:
-                run_id = f"{method}_kiwi_b{budget}_s{seed}"
+                method_tag = f"{method}_freeze{args.freeze}" if args.freeze > 0 else method
+                run_id = f"{method_tag}_kiwi_b{budget}_s{seed}"
                 if run_id in completed_ids:
                     skipped += 1
                     done += 1
                     print(f"\n  ⏭ Skipping {run_id} (already in summary.csv) [{done}/{total}]")
                     continue
-                row = run_single_experiment(method, seed, budget, dry_run=args.dry_run)
+                row = run_single_experiment(
+                    method, seed, budget,
+                    dry_run=args.dry_run,
+                    freeze=args.freeze,
+                    patience_override=args.patience_override,
+                    lr0_override=args.lr0_override,
+                )
                 if row:
                     append_results(row)
                     append_registry(row)
