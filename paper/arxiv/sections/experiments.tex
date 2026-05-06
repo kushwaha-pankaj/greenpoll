@@ -1,66 +1,7 @@
-\label{sec:experiments}
+All training and evaluation runs reported here were carried out on Kaggle's free dual-T4 environment (Tesla T4 $\times$ 2, 15~GiB device memory each) with Python 3.12 and Ultralytics 8.4.46~\cite{jocher2023ultralytics}. Joint pretraining took roughly 75--85 wall-clock minutes; each fine-tuning run took 0.4--5 minutes depending on budget and freeze setting. The full experimental matrix --- 4 methods $\times$ 5 budgets $\times$ 3 seeds, minus a few historical duplicates introduced when an earlier label-budget configuration capped to the same effective sample count --- comprises 72 fine-tune runs in total.
 
-\subsection{Experimental Validation Criteria}
+Splits are the Roboflow-export defaults for each crop. We did not modify the validation or test splits, which keeps our test numbers comparable to other work using the same public datasets. The kiwi test set on which all reported numbers are computed contains 61 images and 369 flower instances. We use Ultralytics' \texttt{val(split="test")} call so that the test mAP@0.5 and mAP@0.5{:}0.95 numbers in the results section match what a downstream user would measure with the same script and a checkpoint we publish.
 
-To validate CrossPoll's effectiveness, we establish the following criteria:
+Three random seeds (42, 43, 44) drive both the per-budget subsample of the kiwi training images and the model initialization where applicable. We chose three seeds rather than five or ten for compute reasons; in practice, three seeds proved enough to expose two failure modes (the from-scratch variance at very low budgets and the unfrozen-CrossPoll collapse at $n{=}25$) but they are at the lower end of statistical reliability, and we report ranges rather than confidence intervals throughout.
 
-\begin{enumerate}
-    \item \textbf{Primary criterion}: CrossPoll achieves $\geq 15\%$ higher mAP@50 than COCO transfer at median label budget ($B=100$)
-    \item \textbf{Secondary criterion}: Gains persist across all label budgets ($B \in \{25, 50, 100, 200, 500\}$)
-    \item \textbf{Robustness criterion}: Performance is stable across three random seeds (std. dev. $< 3\%$ mAP@50)
-    \item \textbf{Scalability criterion}: Multi-source transfer outperforms single-crop transfer at all budgets
-\end{enumerate}
-
-\subsection{Hyperparameter Sensitivity Analysis}
-
-While we adopt standard Ultralytics defaults, we acknowledge potential sensitivity to:
-
-\begin{itemize}
-    \item \textbf{Learning rate decay}: Fine-tuning with lr=0.0001 may be suboptimal for very small budgets. Planned sensitivity study: compare lr $\in \{0.00001, 0.0001, 0.001\}$ on $B=50$
-    \item \textbf{Training epochs}: 150-epoch limit may underutilize large budgets. Planned extension: run epochs $\in \{50, 100, 150, 200\}$ for $B=500$
-    \item \textbf{Augmentation intensity}: Joint training uses standard Ultralytics augmentation. Could experiment with aggressive/conservative augmentation settings
-\end{itemize}
-
-These analyses are deferred to Section~\ref{sec:future} due to computational constraints.
-
-\subsection{Failure Mode Analysis}
-
-We identify potential failure modes and mitigation strategies:
-
-\begin{table}[H]
-\centering
-\caption{Anticipated Failure Modes and Mitigations}
-\label{tab:failures}
-\begin{tabular}{lll}
-\toprule
-\textbf{Failure Mode} & \textbf{Symptom} & \textbf{Mitigation} \\
-\midrule
-Catastrophic forgetting & CrossPoll mAP drops below Scratch & Lower fine-tune LR, reduce epochs \\
-Overfitting at $B=25$ & High train, low val mAP & Increase augmentation, reduce model capacity \\
-Domain shift too large & All methods fail at high budgets & Verify Kiwi flower distinctiveness \\
-Seed variance too high & Std. dev. $> 5\%$ across seeds & Increase training data or seeds \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Computational Cost and Efficiency}
-
-Training 60 runs (4 methods $\times$ 5 budgets $\times$ 3 seeds) on single M1 Pro requires approximately 14--15 hours wall-clock time (sequential execution). Optimizations applied:
-
-\begin{table}[H]
-\centering
-\caption{Training Optimizations Applied}
-\label{tab:optimizations}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Optimization} & \textbf{Expected Speedup} & \textbf{Applied} \\
-\midrule
-cache=`ram' (vs disk I/O) & 20--40\% & \checkmark \\
-cos\_lr=True (convergence) & 0\% direct, enables 150 epoch cap & \checkmark \\
-workers=4 (optimal for macOS) & 5--10\% (vs workers=8) & \checkmark \\
-deterministic=False & 5--10\% & \checkmark \\
-epochs: 300 $\to$ 150 & 50\% & \checkmark \\
-\midrule
-\textbf{Combined Effect} & \textbf{$\approx$ 2--3×} & \\
-\bottomrule
-\end{tabular}
+Mean Average Precision at IoU=0.5 (mAP@0.5) is the headline metric. We additionally report mAP@0.5{:}0.95 where the underlying run logged it; some early baseline runs predate the addition of the secondary metric to our logging script and therefore have empty cells in the secondary table. Run-level results are persisted in \texttt{results/summary.csv}, and the table and figure in this paper are generated from that file by \texttt{scripts/build\_paper\_assets.py}, so the manuscript and the data cannot drift.

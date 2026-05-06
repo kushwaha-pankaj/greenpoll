@@ -1,41 +1,18 @@
-\label{sec:intro}
+Insect pollinators contribute to the production of roughly three quarters of the world's food crops~\cite{klein2007pollinators}, and their populations are under sustained pressure from habitat loss, agrochemical exposure, and climate change~\cite{potts2010decline}. Greenhouse operators in particular have to compensate for the under-supply of pollinators in enclosed environments, and several research groups have proposed autonomous robotic pollinators as a partial answer~\cite{strader2019pollination}. The perception system on such a robot has one job that recurs every time the operator wants to extend it to a new crop: detect every open flower in a row of plants reliably, in real time, on hardware that fits on the robot.
 
-\subsection{Motivation and Problem Statement}
+Detecting flowers across a single, fixed crop is by now a routine deep-learning task~\cite{dias2018apple, tian2019apple, genemola2020fruit}. Detecting them across an arbitrary new crop, with only a handful of labels for that crop, is much harder. Fully retraining a detector from scratch needs hundreds of labeled images and tends to fail badly with fewer than fifty. Fine-tuning from a generic checkpoint such as the COCO-pretrained YOLOv8~\cite{lin2014coco, jocher2023ultralytics} works better because the convolutional features transfer, but the model still has to learn the concept of "flower" from scratch on top of features tuned for cars, dogs, and indoor furniture. We hypothesized that a checkpoint pretrained on a small but \emph{flower-specific} cross-crop dataset would transfer better at small budgets than COCO.
 
-Global pollinator populations are declining at alarming rates due to habitat loss, pesticide exposure, and climate change \cite{vanEngelsdorp2010}. This decline threatens agricultural productivity, with an estimated 75\% of global crops dependent on animal pollinators for reproduction or yield \cite{Klein2007}. In response, autonomous robotic pollination has emerged as a promising solution to maintain crop yields in pollinator-limited environments. However, robotic systems face a critical challenge: they must rapidly detect flowers across diverse crop species—each with distinct visual morphologies, growth patterns, and environmental conditions—without requiring months of manual annotation for each new crop.
+This paper tests that hypothesis empirically. We construct a joint multi-crop flower dataset by harmonizing the annotations of three open Roboflow datasets (apple, strawberry, tomato) into a single \texttt{flower} class, pretrain YOLOv8n on the joint set, and then fine-tune on a held-out target crop (kiwi) at five label budgets between 10 and 181 with three random seeds each. We compare this protocol --- which we call CrossPoll --- against three baselines: training from scratch, fine-tuning from COCO, and fine-tuning from the joint pretrain without backbone freezing. The full sweep comprises 72 fine-tune runs.
 
-Current approaches to flower detection in robotic systems fall into two categories, both with significant limitations:
+The story that emerges is more nuanced than we expected. Fine-tuning the joint pretrain without freezing the backbone produces a sharp accuracy collapse at $n{=}25$: the validation mAP peaks at epoch 3, deteriorates monotonically for the next fifteen epochs, and early-stops near zero. Per-epoch logs make the failure mode visible --- the joint pretrain's flower-specific features are fragile under the noisy gradient updates that 25 images and a batch size of 16 produce. Freezing the YOLOv8n backbone (modules 0--9 in the Ultralytics convention) protects those features and rescues the small-budget regime. With backbone freezing, CrossPoll attains 0.630 test mAP@0.5 at $n{=}10$ versus 0.362 for COCO transfer, and 0.871 at $n{=}25$ versus 0.892 for COCO. From $n{=}50$ upward, COCO transfer regains a small lead because the backbone breadth advantage of full fine-tuning starts to pay off.
 
-\begin{enumerate}
-    \item \textbf{Crop-specific training}: Training separate detectors for each crop requires 1,000--5,000 manually-annotated flower bounding boxes per crop \cite{GeneMola2021}. At 50--100 annotations per hour, this translates to 10--100 hours of labeling per crop—prohibitively expensive for growers deploying systems to multiple varieties.
-    
-    \item \textbf{Generic transfer learning}: Fine-tuning COCO-pretrained detectors (e.g., YOLOv8) directly on small flower datasets typically yields 15--30\% lower mAP than crop-trained models due to the large visual domain gap between natural objects (COCO) and agricultural flowers \cite{Zhang2022}.
-\end{enumerate}
-
-This creates a critical bottleneck: deploying robotic pollinators economically requires methods that achieve high accuracy with minimal crop-specific labels while exploiting available flower datasets from related crops.
-
-\subsection{Core Hypothesis and Research Question}
-
-We hypothesize that \textit{multi-source joint pretraining}—where a detector learns flower representations from multiple diverse crops simultaneously—provides richer, more generalizable features than single-source transfer, enabling faster and more accurate adaptation to new crops with fewer labels.
-
-\textbf{Research Question}: Can a detector jointly pretrained on flowers from multiple source crops adapt to unseen target crops using significantly fewer labeled images than COCO-pretrained baselines, while remaining competitive with crop-specific training?
-
-\subsection{Contributions}
-
-This work makes three primary contributions:
+We make four contributions:
 
 \begin{enumerate}
-    \item \textbf{CrossPoll Framework}: We propose a practical, multi-crop transfer learning pipeline specifically designed for flower detection. The framework jointly pretrains YOLOv8 on three source crops, then fine-tunes with varying label budgets (25--500 images) on a held-out target crop. This approach is architecture-agnostic and easily adaptable to new crop combinations.
-    
-    \item \textbf{Systematic Empirical Evaluation}: We conduct an extensive evaluation across three baseline methods, five label budgets, and three random seeds, demonstrating that multi-source transfer provides consistent 15--25\% mAP gains over single-source COCO transfer at all budget levels. Our results establish clear evidence that multi-crop pretraining is more effective than generic pretrained models for agricultural detection.
-    
-    \item \textbf{OrchardFlow Dataset}: We curate and release OrchardFlow, a multi-crop flower dataset with 16,613 images across four crops (Kiwi, Apple, Strawberry, Tomato) in YOLO format. This resource enables reproducible evaluation of transfer learning methods in agricultural contexts and reduces barriers to future research in this domain.
+\item We harmonize three open agricultural datasets into a single-class joint flower training corpus and release the harmonization script (\texttt{scripts/harmonize\_labels.py}) so that the dataset can be reproduced from the public sources.
+\item We document a small-budget failure mode of CrossPoll-style fine-tuning that does not appear in standard YOLOv8 transfer-learning recipes, and we trace it to small-batch gradient noise on a domain-specialized backbone.
+\item We show that backbone freezing (\texttt{freeze=10}) eliminates the failure mode and produces the strongest results we have at $n \leq 25$ labels.
+\item We present a clean budget-by-method comparison across four methods, five budgets, and three seeds, with all numbers grounded in a single reproducible \texttt{summary.csv} and the table and figure regenerated from that file by a single script.
 \end{enumerate}
 
-\subsection{Impact and Broader Significance}
-
-Sample-efficient flower detection accelerates robotic pollination deployment. By reducing per-crop labeling from hundreds of hours to tens of hours, CrossPoll enables cost-effective multi-crop pollination systems that can adapt to new varieties and cultivars rapidly. Beyond agriculture, the multi-source transfer approach generalizes to other fine-grained detection tasks with limited data, including industrial quality control, medical imaging, and ecological monitoring.
-
-\subsection{Paper Organization}
-
-The remainder of this paper is organized as follows: Section~\ref{sec:related} reviews transfer learning, object detection, domain adaptation, and agricultural computer vision literature. Section~\ref{sec:methods} describes the CrossPoll pipeline, dataset preparation, and experimental design. Section~\ref{sec:experiments} details our experimental setup, including baselines, metrics, and evaluation protocol. Section~\ref{sec:results} presents quantitative results and comparative analysis. Section~\ref{sec:discussion} discusses findings, limitations, and implications for robotic systems. Finally, Section~\ref{sec:conclusion} concludes with future work.
+The paper is structured as follows. Section~\ref{sec:related} situates CrossPoll relative to transfer learning, few-shot detection, and agricultural computer vision. Section~\ref{sec:method} describes the harmonization, joint pretraining, and fine-tuning protocols. Section~\ref{sec:experiments} reports the experimental setup. Section~\ref{sec:results} presents the headline numbers. Section~\ref{sec:discussion} interprets them and lists the limitations honestly. Section~\ref{sec:conclusion} closes with the next experiments.

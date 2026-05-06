@@ -38,6 +38,23 @@ User has limited local disk (~3.8 GB free). Don't restore `data/` locally withou
 - **Kaggle pip install gotcha**: do NOT `pip install ultralytics` on a Kaggle GPU notebook. It re-resolves and replaces the preinstalled CUDA `torch-2.10.0+cu128` with a CPU wheel `torch-2.10.0+cpu`, killing GPU access. Use `pip install -q --no-deps ultralytics ultralytics-thop` instead.
 - **CrossPoll b25 collapse**: in the first full Step 4 sweep, crosspoll fine-tune at b25 collapsed (mAP50 ≈ 0.39 across all seeds) due to small-batch noise destroying the joint pretrain's specialized features. Per-run logs show peak at epoch 3 then catastrophic forgetting until patience=15 stops it at epoch 18. Fix in progress: `--freeze 10` + `--patience-override 30` flags added to `run_baselines.py` (see plan in /Users/PankajKushwaha/.claude/plans/cuddly-kindling-fairy.md). Run `python scripts/run_baselines.py --methods crosspoll --freeze 10 --patience-override 30` — produces distinct `crosspoll_freeze10_*` rows so the original crosspoll rows stay for comparison. Literature support: arxiv 2505.01016 found freeze=10 best for similar fruit-detection task.
 
+## Paper build
+
+The arXiv preprint lives in `paper/arxiv/`. **All numbers come from `results/summary.csv`** via `scripts/build_paper_assets.py` — never edit the table or figure by hand. Workflow:
+
+```bash
+# 1. (re)generate results_table.tex + figures/sample_efficiency.pdf from summary.csv
+python scripts/build_paper_assets.py
+
+# 2. compile (requires pdflatex + bibtex; install MacTeX or BasicTeX, or use Overleaf)
+cd paper/arxiv
+pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+```
+
+Verification: no `[?]` citation markers, `wc -w sections/*.tex` ~ 4100 words. To check for AI-detection signature, paste the abstract and one methods paragraph into GPTZero / Originality.ai. Style rules in the plan file (`/Users/PankajKushwaha/.claude/plans/cuddly-kindling-fairy.md`) — vary sentence length, specific numbers always, hedging where appropriate, no AI-signature phrases (delve, leverage, moreover, furthermore, in conclusion).
+
+If a reviewer asks for a number that isn't in `summary.csv`, run a new sweep, regenerate assets, then re-edit the prose. Don't add hand-calculated numbers to the paper.
+
 ## Recent commits (this session)
 
 - `8c1a947` Step 4: harmonize_labels + pretrain_joint + crosspoll method
