@@ -46,9 +46,13 @@ The arXiv preprint lives in `paper/arxiv/`. **All numbers come from `results/sum
 # 1. (re)generate results_table.tex + figures/sample_efficiency.pdf from summary.csv
 python scripts/build_paper_assets.py
 
-# 2. compile (requires pdflatex + bibtex; install MacTeX or BasicTeX, or use Overleaf)
-cd paper/arxiv
-pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+# 2. compile (three options)
+#    a) Tectonic single-binary engine — fastest local path, no sudo:
+#       curl -fsSL https://drop-sh.fullyjustified.net | sh   # downloads ./tectonic
+#       ./tectonic -X compile paper/arxiv/main.tex            # writes paper/arxiv/main.pdf
+#    b) MacTeX/BasicTeX:
+#       cd paper/arxiv && pdflatex main.tex && bibtex main && pdflatex main.tex && pdflatex main.tex
+#    c) Overleaf — drag paper/arxiv/ into a new project, hit Recompile
 ```
 
 Verification: no `[?]` citation markers, `wc -w sections/*.tex` ~ 4100 words. To check for AI-detection signature, paste the abstract and one methods paragraph into GPTZero / Originality.ai. Style rules in the plan file (`/Users/PankajKushwaha/.claude/plans/cuddly-kindling-fairy.md`) — vary sentence length, specific numbers always, hedging where appropriate, no AI-signature phrases (delve, leverage, moreover, furthermore, in conclusion).

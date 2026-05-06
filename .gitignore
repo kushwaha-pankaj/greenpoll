@@ -36,3 +36,12 @@ results/*
 
 # Node (used only by paper conversion utilities)
 node_modules/
+
+# Tectonic LaTeX binary (downloaded ad-hoc for compiling the paper)
+/tectonic
+paper/arxiv/main.pdf
+paper/arxiv/*.aux
+paper/arxiv/*.log
+paper/arxiv/*.bbl
+paper/arxiv/*.blg
+paper/arxiv/*.out
