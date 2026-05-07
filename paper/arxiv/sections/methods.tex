@@ -21,10 +21,10 @@ The four methods differ only in initialization and in whether the backbone is fr
   \item[Scratch.] Random YOLOv8n weights from the architecture YAML. No transfer.
   \item[COCO transfer.] Initialized from the public \texttt{yolov8n.pt} (COCO).
   \item[CrossPoll (full FT).] Initialized from our joint pretrain checkpoint. All weights are updated.
-  \item[CrossPoll + freeze.] Initialized from the joint pretrain checkpoint, with the YOLOv8n backbone (modules 0--9 in the Ultralytics convention~\cite{garg2025fine}) held fixed. The neck (FPN~\cite{lin2017fpn}) and the detection head are trained.
+  \item[CrossPoll + freeze.] Initialized from the joint pretrain checkpoint, with the YOLOv8n backbone (modules 0--9 in the Ultralytics convention~\cite{gandhi2025fine}) held fixed. The neck (FPN~\cite{lin2017fpn}) and the detection head are trained.
 \end{description}
 
-The frozen variant is motivated by the observation that the joint pretrain produces highly domain-specialized features. Earlier work on YOLOv8 fine-tuning for fruit detection~\cite{garg2025fine} reports that freezing the first ten modules retains the pretrained representation while allowing task-specific adaptation in the head, and we found the same intuition to hold here.
+The frozen variant is motivated by the observation that the joint pretrain produces highly domain-specialized features. Earlier work on YOLOv8 fine-tuning for fruit detection~\cite{gandhi2025fine} reports that freezing the first ten modules retains the pretrained representation while allowing task-specific adaptation in the head, and we found the same intuition to hold here.
 
 Fine-tuning hyperparameters are shared across the four methods and across budgets: AdamW, cosine learning rate schedule, batch size 16, 640$\times$640 inputs, automatic mixed precision, and 150-epoch ceiling. The initial learning rate is $10^{-4}$, an order of magnitude below the joint pretrain rate; this is appropriate when starting from a near-converged checkpoint. Patience is 15 epochs for the unfrozen runs and 30 epochs for the frozen variant. We extended patience for the frozen runs because the head needs more updates to adapt when the backbone cannot move, and the early-epoch validation curves are noisier on small budgets.
 

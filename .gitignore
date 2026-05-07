@@ -45,3 +45,6 @@ paper/arxiv/*.log
 paper/arxiv/*.bbl
 paper/arxiv/*.blg
 paper/arxiv/*.out
+
+# arXiv submission tarball (regenerable; see CLAUDE.md "Paper build")
+/crosspoll_arxiv.tar.gz
