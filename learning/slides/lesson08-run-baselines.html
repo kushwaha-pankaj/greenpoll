@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 08 - Run Baselines</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css">
+  <style>
+    :root { --greenpoll: #1f7a4d; --ink: #17211b; --muted: #5c6b62; --panel: #eef7f1; --warn: #8a4b08; }
+    .reveal { color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--greenpoll); text-transform: none; letter-spacing: -0.03em; }
+    .reveal p, .reveal li { font-size: 0.76em; line-height: 1.4; }
+    .reveal small { color: var(--muted); }
+    .callout { background: var(--panel); border-left: 0.35rem solid var(--greenpoll); border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: left; }
+    .warning { background: #fff7ed; border-left-color: var(--warn); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; align-items: start; }
+    .checkpoint { border: 1px solid #cfe6d8; border-radius: 0.75rem; padding: 0.8rem 1rem; background: #fbfefc; text-align: left; }
+    code { color: #0f5132; }
+    pre { font-size: 0.42em; line-height: 1.18; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <h1>Lesson 08: The Baseline Runner</h1>
+  <p>The main sweep script that trains, evaluates, and logs the evidence table.</p>
+  <small>File: <code>scripts/run_baselines.py</code></small>
+</section>
+
+<section>
+  <h2>First Principle: A Fair Experiment Changes One Thing At A Time</h2>
+  <div class="callout">
+    <p>A baseline runner should keep data splits, label budgets, metrics, and logging consistent while swapping only the method being compared.</p>
+  </div>
+  <p>Here, the method can be scratch, COCO transfer, or CrossPoll.</p>
+</section>
+
+<section>
+  <h2>What This Script Does</h2>
+  <ol>
+    <li>Subsample kiwi train images to a label budget.</li>
+    <li>Write a temporary YOLO <code>data.yaml</code>.</li>
+    <li>Train YOLOv8n from the selected initialization.</li>
+    <li>Evaluate the best checkpoint on kiwi test.</li>
+    <li>Append metrics to <code>results/summary.csv</code> and the run registry.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Method Comparison</h2>
+  <div class="two-col">
+    <div>
+      <h3>Initializations</h3>
+      <ul>
+        <li><code>scratch</code>: architecture only, random weights.</li>
+        <li><code>coco_transfer</code>: COCO-pretrained <code>yolov8n.pt</code>.</li>
+        <li><code>crosspoll</code>: source-crop flower checkpoint.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Constant Target</h3>
+      <p>All methods adapt to held-out kiwi with the same budgets and seed set.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Config Loading</h2>
+  <p>At import time, the script reads <code>configs/experiments/crosspoll.yaml</code>.</p>
+  <pre><code>DEFAULT_SEEDS = CFG["reproducibility"]["seeds"]
+DEFAULT_BUDGETS = CFG["data"]["label_budgets"]
+EPOCHS = CFG["training"]["epochs"]
+LR_FINETUNE = CFG["training"]["lr0_finetune"]</code></pre>
+  <p>This keeps the command-line defaults aligned with the experiment protocol.</p>
+</section>
+
+<section>
+  <h2>Device Selection</h2>
+  <pre><code>GREENPOLL_DEVICE
+  -> YAML device
+  -> MPS if available
+  -> CUDA if YAML says MPS but host has CUDA
+  -> Ultralytics auto-detect</code></pre>
+  <p>This exists because local Mac development and Kaggle GPU execution need different device strings.</p>
+</section>
+
+<section>
+  <h2>Listing Image/Label Pairs</h2>
+  <pre><code>for img in sorted(img_dir.iterdir()):
+    if img.suffix.lower() in (".jpg", ".jpeg", ".png"):
+        lbl = lbl_dir / (img.stem + ".txt")
+        if lbl.exists():
+            pairs.append((img, lbl))</code></pre>
+  <p>The script only trains on images that have corresponding label files.</p>
+</section>
+
+<section>
+  <h2>Few-Shot Budgeting</h2>
+  <pre><code>rng = random.Random(seed)
+n = min(budget, len(pairs))
+selected = rng.sample(pairs, n)</code></pre>
+  <p>The "label budget" in this script is a number of kiwi training images selected by seed.</p>
+  <div class="callout warning">
+    <p>Because kiwi train has 181 images, budgets above 181 are capped. That prevents duplicated effective budgets.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Temporary Dataset</h2>
+  <p>The subsampled kiwi train set is created under <code>runs/tmp/&lt;run_id&gt;</code>.</p>
+  <p>Images and labels are symlinked for speed and disk efficiency, then a temporary <code>data.yaml</code> points Ultralytics at:</p>
+  <pre><code>train: runs/tmp/.../train/images
+val: data/kiwi/valid/images
+test: data/kiwi/test/images</code></pre>
+</section>
+
+<section>
+  <h2>Why Absolute Paths In data.yaml?</h2>
+  <div class="callout">
+    <p>Training frameworks often run from changing working directories. Absolute paths remove ambiguity about where images and labels live.</p>
+  </div>
+  <p>The script writes stringified <code>Path</code> values into the generated YAML.</p>
+</section>
+
+<section>
+  <h2>Run IDs</h2>
+  <pre><code>method_tag = f"{method}_freeze{freeze}" if freeze &gt; 0 else method
+run_id = f"{method_tag}_kiwi_b{budget}_s{seed}"</code></pre>
+  <p>The run ID encodes method, crop, budget, and seed. Freeze variants get distinct IDs so they do not overwrite the original CrossPoll rows.</p>
+</section>
+
+<section>
+  <h2>Dedupe Logic</h2>
+  <p><code>load_completed_run_ids</code> reads existing <code>summary.csv</code> rows and skips matching <code>run_id</code>s.</p>
+  <div class="callout">
+    <p>This makes interrupted sweeps resumable. It also means changing a run's semantics without changing the run ID is dangerous.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Creating The Model</h2>
+  <pre><code>scratch       -> YOLO("yolov8n.yaml")
+coco_transfer -> YOLO("yolov8n.pt")
+crosspoll     -> YOLO("runs/joint/.../best.pt")
+              or YOLO("checkpoints/joint_pretrain.pt")</code></pre>
+  <p>The three branches define the central comparison in the paper.</p>
+</section>
+
+<section>
+  <h2>Training Call</h2>
+  <p>The script passes a consistent set of training keyword arguments to Ultralytics:</p>
+  <ul>
+    <li>Data, epochs, patience, image size, batch, optimizer, AMP.</li>
+    <li>Fine-tuning learning rate, cache, cosine LR, workers, deterministic flag.</li>
+    <li>Seed, project directory, run name, optional device, optional freeze.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Freeze And Patience Overrides</h2>
+  <p>The CLI includes <code>--freeze</code>, <code>--patience-override</code>, and <code>--lr0-override</code>.</p>
+  <div class="callout">
+    <p>These exist because early CrossPoll fine-tuning can forget source-crop features at small budgets. Freezing early layers can protect low-level visual features.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Evaluation Metrics</h2>
+  <pre><code>metrics = eval_model.val(data=str(data_yaml), split="test")
+mAP50 = float(metrics.box.map50)
+mAP50_95 = float(metrics.box.map)
+precision = float(metrics.box.mp)
+recall = float(metrics.box.mr)
+f1 = 2 * precision * recall / (precision + recall)</code></pre>
+  <p>The final row logs both detection quality and operational metadata.</p>
+</section>
+
+<section>
+  <h2>Logging Contracts</h2>
+  <ul>
+    <li><code>append_results</code> writes paper-facing metrics to <code>results/summary.csv</code>.</li>
+    <li><code>append_registry</code> writes run provenance to <code>experiments/registry.csv</code>.</li>
+    <li><code>SUMMARY_HEADER</code> defines column order when creating a fresh summary file.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Cleanup</h2>
+  <p>After a real run, the temporary dataset is removed with <code>shutil.rmtree(tmp_dir)</code>.</p>
+  <p>That keeps only the meaningful artifacts: run outputs, checkpoint paths, registry rows, and summary metrics.</p>
+</section>
+
+<section>
+  <h2>CLI Surface</h2>
+  <pre><code>python scripts/run_baselines.py
+python scripts/run_baselines.py --seeds 42 --budgets 25
+python scripts/run_baselines.py --methods crosspoll --freeze 10 --patience-override 30</code></pre>
+  <p>The same script supports smoke tests, full sweeps, and targeted CrossPoll variants.</p>
+</section>
+
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li><code>run_baselines.py</code> is the main evidence-producing script.</li>
+    <li>A label budget is implemented as sampled kiwi training images.</li>
+    <li>Run IDs are the dedupe key and must reflect meaningful protocol changes.</li>
+    <li>All paper-facing metrics should flow through <code>results/summary.csv</code>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+  <div class="checkpoint">
+    <ol>
+      <li>Explain the difference between <code>yolov8n.yaml</code> and <code>yolov8n.pt</code>.</li>
+      <li>Why does the script use a seed when sampling a label budget?</li>
+      <li>What could go wrong if two different protocols share the same <code>run_id</code>?</li>
+      <li>Trace where <code>mAP50_95</code> enters the final CSV row.</li>
+      <li>Why is <code>dry-run</code> useful before starting a long Kaggle sweep?</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>Reveal.initialize({ hash: true, slideNumber: "c/t", transition: "fade", controlsTutorial: false });</script>
+</body>
+</html>

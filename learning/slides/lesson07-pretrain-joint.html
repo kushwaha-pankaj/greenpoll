@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 07 - Joint Pretraining</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css">
+  <style>
+    :root { --greenpoll: #1f7a4d; --ink: #17211b; --muted: #5c6b62; --panel: #eef7f1; --warn: #8a4b08; }
+    .reveal { color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--greenpoll); text-transform: none; letter-spacing: -0.03em; }
+    .reveal p, .reveal li { font-size: 0.78em; line-height: 1.42; }
+    .reveal small { color: var(--muted); }
+    .callout { background: var(--panel); border-left: 0.35rem solid var(--greenpoll); border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: left; }
+    .warning { background: #fff7ed; border-left-color: var(--warn); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; align-items: start; }
+    .checkpoint { border: 1px solid #cfe6d8; border-radius: 0.75rem; padding: 0.8rem 1rem; background: #fbfefc; text-align: left; }
+    code { color: #0f5132; }
+    pre { font-size: 0.44em; line-height: 1.22; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <h1>Lesson 07: Joint Pretraining</h1>
+  <p>How the harmonized source crops become the CrossPoll initialization.</p>
+  <small>File: <code>scripts/pretrain_joint.py</code></small>
+</section>
+
+<section>
+  <h2>First Principle: Transfer Learning</h2>
+  <div class="callout">
+    <p>Transfer learning starts from weights that already encode useful visual features, then adapts them to a new task or domain.</p>
+  </div>
+  <p>GreenPoll uses two transfers: COCO to source-crop flowers, then source-crop flowers to kiwi.</p>
+</section>
+
+<section>
+  <h2>Why Pretrain On Source Crops?</h2>
+  <p>Apple, strawberry, and tomato provide more flower examples than kiwi alone.</p>
+  <p>The hypothesis is that their shared visual structure teaches a better flower feature extractor than general COCO objects alone.</p>
+  <div class="callout">
+    <p>CrossPoll is not zero-shot. It is source-domain pretraining followed by few-shot fine-tuning on held-out kiwi.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Inputs and Output</h2>
+  <pre><code>Input:
+  data/joint/apple
+  data/joint/strawberry
+  data/joint/tomato
+
+Output:
+  runs/joint/pretrain/weights/best.pt</code></pre>
+  <p>The output checkpoint is later loaded by <code>run_baselines.py --methods crosspoll</code>.</p>
+</section>
+
+<section>
+  <h2>Device Resolution</h2>
+  <pre><code>GREENPOLL_DEVICE env var
+  -> YAML training.device
+  -> MPS if available
+  -> CUDA fallback for Kaggle
+  -> Ultralytics auto-detect</code></pre>
+  <p>The script tries to run on Apple Silicon locally while still working on Kaggle CUDA machines.</p>
+</section>
+
+<section>
+  <h2>Building The Joint data.yaml</h2>
+  <pre><code>train = [
+  data/joint/apple/train/images,
+  data/joint/strawberry/train/images,
+  data/joint/tomato/train/images,
+]
+val = [
+  data/joint/apple/valid/images,
+  data/joint/strawberry/valid/images,
+  data/joint/tomato/valid/images,
+]</code></pre>
+  <p>Ultralytics can accept lists of directories, so the script does not need to physically merge all images into one folder.</p>
+</section>
+
+<section>
+  <h2>The Single-Class Contract</h2>
+  <pre><code>data = {
+    "train": train,
+    "val": val,
+    "nc": 1,
+    "names": ["flower"],
+}</code></pre>
+  <p>This is why harmonization must happen first. The pretraining script assumes all source labels now mean one class: flower.</p>
+</section>
+
+<section>
+  <h2>Failure Is Intentional</h2>
+  <p>If no joint train split exists, the script raises <code>FileNotFoundError</code>.</p>
+  <div class="callout">
+    <p>This is an invariant: pretraining without harmonized data is invalid, so the script should fail loudly.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Model Initialization</h2>
+  <pre><code>model = YOLO("yolov8n.pt")</code></pre>
+  <p>This starts from COCO-pretrained YOLOv8n rather than random weights.</p>
+  <p>The scientific comparison later asks whether extra source-crop pretraining improves adaptation beyond COCO transfer alone.</p>
+</section>
+
+<section>
+  <h2>Training Hyperparameters</h2>
+  <p>The script reads training settings from <code>configs/experiments/crosspoll.yaml</code>:</p>
+  <ul>
+    <li><code>epochs</code>, <code>patience</code>, <code>imgsz</code>, <code>batch</code>.</li>
+    <li><code>optimizer</code>, <code>amp</code>, <code>cache</code>, <code>cos_lr</code>, <code>workers</code>.</li>
+    <li><code>lr0_joint</code> for source-domain pretraining.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Why lr0_joint Is Separate</h2>
+  <div class="callout">
+    <p>Pretraining and fine-tuning have different optimization needs. Pretraining can use a larger learning rate because it is learning source-domain flower features from more data.</p>
+  </div>
+  <p>Fine-tuning later uses <code>lr0_finetune</code>, which is smaller to avoid destroying useful pretrained features too quickly.</p>
+</section>
+
+<section>
+  <h2>Run Directory Semantics</h2>
+  <pre><code>project = runs/joint
+name = pretrain
+exist_ok = True</code></pre>
+  <p>This produces a stable checkpoint path: <code>runs/joint/pretrain/weights/best.pt</code>.</p>
+  <p>Stable paths make downstream automation simpler, but they also mean reruns can overwrite old local artifacts.</p>
+</section>
+
+<section>
+  <h2>Connection To CrossPoll</h2>
+  <pre><code>COCO yolov8n.pt
+  -> joint source-crop flower training
+  -> runs/joint/pretrain/weights/best.pt
+  -> kiwi few-shot fine-tuning</code></pre>
+  <p>The checkpoint is the bridge between source crops and held-out kiwi.</p>
+</section>
+
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li>Joint pretraining is the defining step that makes CrossPoll different from ordinary COCO transfer.</li>
+    <li>The script depends on harmonized single-class data and a stable experiment config.</li>
+    <li>The saved <code>best.pt</code> is an experimental artifact, not a source file.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+  <div class="checkpoint">
+    <ol>
+      <li>Explain why kiwi must not appear in <code>SOURCE_CROPS</code>.</li>
+      <li>What does <code>nc: 1</code> mean in the generated joint <code>data.yaml</code>?</li>
+      <li>Why does the script start from <code>yolov8n.pt</code> instead of <code>yolov8n.yaml</code>?</li>
+      <li>What paper comparison would be impossible without saving <code>best.pt</code>?</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>Reveal.initialize({ hash: true, slideNumber: "c/t", transition: "fade", controlsTutorial: false });</script>
+</body>
+</html>

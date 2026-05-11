@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 09 - Paper Assets</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css">
+  <style>
+    :root { --greenpoll: #1f7a4d; --ink: #17211b; --muted: #5c6b62; --panel: #eef7f1; --warn: #8a4b08; }
+    .reveal { color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--greenpoll); text-transform: none; letter-spacing: -0.03em; }
+    .reveal p, .reveal li { font-size: 0.78em; line-height: 1.42; }
+    .reveal small { color: var(--muted); }
+    .callout { background: var(--panel); border-left: 0.35rem solid var(--greenpoll); border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: left; }
+    .warning { background: #fff7ed; border-left-color: var(--warn); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; align-items: start; }
+    .checkpoint { border: 1px solid #cfe6d8; border-radius: 0.75rem; padding: 0.8rem 1rem; background: #fbfefc; text-align: left; }
+    code { color: #0f5132; }
+    pre { font-size: 0.43em; line-height: 1.2; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <h1>Lesson 09: Paper Assets</h1>
+  <p>How GreenPoll turns experiment results into the arXiv table and figure.</p>
+  <small>File: <code>scripts/build_paper_assets.py</code></small>
+</section>
+
+<section>
+  <h2>First Principle: Papers Need Traceable Numbers</h2>
+  <div class="callout">
+    <p>A result in a paper should be reproducible from stored experiment outputs, not copied from memory or hand-calculated in prose.</p>
+  </div>
+  <p>This repo uses <code>results/summary.csv</code> as the single source of truth for paper-facing metrics.</p>
+</section>
+
+<section>
+  <h2>The Asset Pipeline</h2>
+  <pre><code>results/summary.csv
+  -> scripts/build_paper_assets.py
+  -> paper/arxiv/results_table.tex
+  -> paper/arxiv/figures/sample_efficiency.pdf
+  -> paper/arxiv/main.tex</code></pre>
+  <p>The script exists to keep the table, figure, and logged results synchronized.</p>
+</section>
+
+<section>
+  <h2>CSV Schema</h2>
+  <pre><code>result_id, run_id, method, heldout_crop, n_labels,
+mAP50, mAP50_95, precision, recall, f1,
+latency_ms, model_size_mb, train_time_min,
+split_version, seed</code></pre>
+  <p>These columns come from the baseline runner's <code>SUMMARY_HEADER</code>.</p>
+</section>
+
+<section>
+  <h2>Aggregation</h2>
+  <p><code>load_aggregated</code> groups rows by:</p>
+  <pre><code>(method, n_labels)</code></pre>
+  <p>For each group, it computes:</p>
+  <ul>
+    <li>Number of runs.</li>
+    <li>Mean mAP50.</li>
+    <li>Minimum and maximum mAP50.</li>
+    <li>Mean mAP50-95 when available.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Why Ignore Empty mAP50-95?</h2>
+  <p>Some older rows have blank or effectively missing <code>mAP50_95</code> values.</p>
+  <div class="callout">
+    <p>The script treats missing or zero-filled mAP50-95 values as absent, so it does not average fake zeros into newer runs.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Method Ordering</h2>
+  <pre><code>METHOD_ORDER = [
+    "scratch",
+    "coco_transfer",
+    "crosspoll",
+    "crosspoll_freeze10",
+]</code></pre>
+  <p>The table and figure use the same ordering and display labels, which keeps the story consistent across assets.</p>
+</section>
+
+<section>
+  <h2>Budget Ordering</h2>
+  <pre><code>BUDGETS = [10, 25, 50, 100, 181]</code></pre>
+  <p>The final budget is 181 because kiwi has 181 train images. This avoids presenting capped budgets as if they were distinct sample sizes.</p>
+</section>
+
+<section>
+  <h2>Writing The Table</h2>
+  <p><code>write_table</code> creates a LaTeX table where each cell is:</p>
+  <pre><code>mean mAP50 [min, max]</code></pre>
+  <p>It also bolds the best mean per label budget.</p>
+  <div class="callout">
+    <p>The range communicates seed variability, which matters in few-shot experiments.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Writing The Figure</h2>
+  <p><code>write_figure</code> plots sample-efficiency curves:</p>
+  <ul>
+    <li>X-axis: kiwi training labels, log-scaled.</li>
+    <li>Y-axis: test mAP@0.5.</li>
+    <li>Error bars: distance from mean to min/max over seeds.</li>
+  </ul>
+  <p>The figure is saved to <code>paper/arxiv/figures/sample_efficiency.pdf</code>.</p>
+</section>
+
+<section>
+  <h2>Headless Matplotlib</h2>
+  <pre><code>matplotlib.use("Agg")</code></pre>
+  <p><code>Agg</code> lets Matplotlib render files without opening a GUI window. That matters for CI, servers, and Kaggle-like environments.</p>
+</section>
+
+<section>
+  <h2>Console Sanity Check</h2>
+  <p><code>print_summary</code> prints the numbers that will appear in the paper.</p>
+  <div class="callout">
+    <p>This is a human inspection step. It does not replace the generated table, but it helps catch surprising values before compiling the paper.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What Not To Do</h2>
+  <div class="callout warning">
+    <p>Do not manually edit <code>paper/arxiv/results_table.tex</code> to fix a result. Fix or rerun the experiment, update <code>results/summary.csv</code>, then regenerate assets.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Connection To LaTeX</h2>
+  <p>The arXiv paper lives under <code>paper/arxiv</code>. The generated table and figure are included from that manuscript tree.</p>
+  <p>The workflow is:</p>
+  <pre><code>python scripts/build_paper_assets.py
+compile paper/arxiv/main.tex</code></pre>
+</section>
+
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li><code>summary.csv</code> is the numeric source of truth.</li>
+    <li><code>build_paper_assets.py</code> performs aggregation, table generation, and figure generation.</li>
+    <li>Manual edits to generated assets break traceability.</li>
+    <li>Seed ranges should be read as uncertainty evidence, not decoration.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+  <div class="checkpoint">
+    <ol>
+      <li>Which column determines the label-budget grouping?</li>
+      <li>Why does the table show a range instead of only a mean?</li>
+      <li>What should you do if a reviewer asks for a metric that is not in <code>summary.csv</code>?</li>
+      <li>Why is <code>results_table.tex</code> generated instead of edited by hand?</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>Reveal.initialize({ hash: true, slideNumber: "c/t", transition: "fade", controlsTutorial: false });</script>
+</body>
+</html>

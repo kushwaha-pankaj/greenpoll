@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 06 - Harmonize Labels</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css">
+  <style>
+    :root { --greenpoll: #1f7a4d; --ink: #17211b; --muted: #5c6b62; --panel: #eef7f1; --warn: #8a4b08; }
+    .reveal { color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--greenpoll); text-transform: none; letter-spacing: -0.03em; }
+    .reveal p, .reveal li { font-size: 0.78em; line-height: 1.42; }
+    .reveal small { color: var(--muted); }
+    .callout { background: var(--panel); border-left: 0.35rem solid var(--greenpoll); border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: left; }
+    .warning { background: #fff7ed; border-left-color: var(--warn); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; align-items: start; }
+    .checkpoint { border: 1px solid #cfe6d8; border-radius: 0.75rem; padding: 0.8rem 1rem; background: #fbfefc; text-align: left; }
+    code { color: #0f5132; }
+    pre { font-size: 0.44em; line-height: 1.22; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <h1>Lesson 06: Label Harmonization</h1>
+  <p>How separate crop datasets become one flower-detection source domain.</p>
+  <small>File: <code>scripts/harmonize_labels.py</code></small>
+</section>
+
+<section>
+  <h2>First Principle: Labels Define The Task</h2>
+  <div class="callout">
+    <p>A model does not learn "flowers" in the abstract. It learns the relationship between pixels, bounding boxes, and numeric class IDs.</p>
+  </div>
+  <p>If two datasets use different class meanings, joining them without remapping can teach contradictory supervision.</p>
+</section>
+
+<section>
+  <h2>YOLO Label Format</h2>
+  <pre><code>class_id x_center y_center width height</code></pre>
+  <ul>
+    <li><code>class_id</code> is an integer category.</li>
+    <li>The four coordinates are normalized to image width and height.</li>
+    <li>One image can have many label lines because one image can contain many flowers.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>The GreenPoll Problem</h2>
+  <div class="two-col">
+    <div>
+      <h3>Source Crops</h3>
+      <ul>
+        <li>Apple: class 0 is flower.</li>
+        <li>Strawberry: class 0 is flower, classes 1 and 2 are fruit states.</li>
+        <li>Tomato: classes 0, 1, and 2 are assumed flower-like stages.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Needed Task</h3>
+      <p>CrossPoll pretraining needs one shared class:</p>
+      <pre><code>0 = flower</code></pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The Explicit Mapping</h2>
+  <pre><code>CLASS_MAP = {
+    "apple":      {0: 0},
+    "strawberry": {0: 0},
+    "tomato":     {0: 0, 1: 0, 2: 0},
+}</code></pre>
+  <p>This is the highest-risk semantic decision in the harmonization script.</p>
+  <div class="callout warning">
+    <p>If tomato classes are not all flowers, the source-domain pretraining target is contaminated.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Dropping vs Remapping</h2>
+  <p>The script uses two operations:</p>
+  <ul>
+    <li>Remap: replace an original class ID with the shared class ID <code>0</code>.</li>
+    <li>Drop: skip a line if its original class ID is not in that crop's mapping.</li>
+  </ul>
+  <p>For strawberry, ripe and unripe fruit labels are dropped because they are not flower boxes.</p>
+</section>
+
+<section>
+  <h2>Function Walk: One Label File</h2>
+  <pre><code>for line in f_in:
+    parts = line.strip().split()
+    if not parts:
+        continue
+    cls = int(parts[0])
+    if cls not in mapping:
+        continue
+    parts[0] = str(mapping[cls])
+    out_lines.append(" ".join(parts))</code></pre>
+  <p>The coordinates are preserved exactly. Only the class ID is changed or the annotation is dropped.</p>
+</section>
+
+<section>
+  <h2>Why Preserve Coordinates?</h2>
+  <div class="callout">
+    <p>Harmonization changes label meaning, not object location. The bounding box still marks the same pixels in the same image.</p>
+  </div>
+  <p>If you changed coordinates here, this would become an annotation transformation script, not a class harmonization script.</p>
+</section>
+
+<section>
+  <h2>Output Layout</h2>
+  <pre><code>data/joint/
+  apple/train/images
+  apple/train/labels
+  strawberry/train/images
+  strawberry/train/labels
+  tomato/train/images
+  tomato/train/labels</code></pre>
+  <p>The output mirrors YOLO's expected image/label directory structure so Ultralytics can train on it.</p>
+</section>
+
+<section>
+  <h2>Why Copy Images?</h2>
+  <p>The code copies image folders instead of symlinking them.</p>
+  <div class="callout">
+    <p>The in-code reason: Ultralytics can resolve image symlinks before deriving label paths, which may cause it to read original labels instead of harmonized labels.</p>
+  </div>
+  <p>Copying keeps images and rewritten labels co-located under <code>data/joint</code>.</p>
+</section>
+
+<section>
+  <h2>Idempotence</h2>
+  <p>At startup, the script removes the old joint directory if it exists.</p>
+  <pre><code>if JOINT_DIR.exists():
+    shutil.rmtree(JOINT_DIR)</code></pre>
+  <p>That makes reruns clean: stale labels from a previous mapping cannot survive.</p>
+</section>
+
+<section>
+  <h2>Trade-Off: Safety vs Disk</h2>
+  <ul>
+    <li>Copying images avoids Ultralytics label-path bugs.</li>
+    <li>Copying images costs disk space.</li>
+    <li>This matters because the project notes limited local disk and recommends Kaggle for compute-heavy work.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li>Class harmonization is a scientific assumption, not just preprocessing.</li>
+    <li>Only source crops are harmonized for joint pretraining; kiwi remains held out.</li>
+    <li>The map in <code>CLASS_MAP</code> should not be changed casually because it changes what the model learns as "flower."</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+  <div class="checkpoint">
+    <ol>
+      <li>Given label line <code>2 0.5 0.5 0.2 0.1</code>, what happens under the tomato map?</li>
+      <li>What happens to that same line under the strawberry map?</li>
+      <li>Why would symlinking images be tempting, and why did this repo avoid it here?</li>
+      <li>Explain how a wrong <code>CLASS_MAP</code> could weaken the paper's central claim.</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>Reveal.initialize({ hash: true, slideNumber: "c/t", transition: "fade", controlsTutorial: false });</script>
+</body>
+</html>

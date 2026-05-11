@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 01 - Packaging, Imports, Tests</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css">
+  <style>
+    :root { --greenpoll: #1f7a4d; --ink: #17211b; --muted: #5c6b62; --panel: #eef7f1; --warn: #8a4b08; }
+    .reveal { color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--greenpoll); text-transform: none; letter-spacing: -0.03em; }
+    .reveal p, .reveal li { font-size: 0.78em; line-height: 1.42; }
+    .reveal small { color: var(--muted); }
+    .callout { background: var(--panel); border-left: 0.35rem solid var(--greenpoll); border-radius: 0.5rem; padding: 0.75rem 1rem; text-align: left; }
+    .warning { background: #fff7ed; border-left-color: var(--warn); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; align-items: start; }
+    .checkpoint { border: 1px solid #cfe6d8; border-radius: 0.75rem; padding: 0.8rem 1rem; background: #fbfefc; text-align: left; }
+    code { color: #0f5132; }
+    pre { font-size: 0.46em; line-height: 1.25; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section>
+  <h1>Lesson 01: Packaging, Imports, Tests</h1>
+  <p>Learn how Python sees this repo before learning how the ML experiment runs.</p>
+  <small>Files: <code>pyproject.toml</code>, <code>src/greenpoll</code>, <code>tests</code>, <code>.github/workflows/ci.yml</code></small>
+</section>
+
+<section>
+  <h2>First Principle: Packaging Makes Code Importable</h2>
+  <div class="callout">
+    <p>A Python file is not automatically a reusable package. Packaging tells Python where importable modules live and what dependencies must exist.</p>
+  </div>
+  <p>GreenPoll uses the modern <code>src/</code> layout, so importable code lives under <code>src/greenpoll</code>.</p>
+</section>
+
+<section>
+  <h2>The Build System</h2>
+  <p><code>pyproject.toml</code> declares <code>setuptools</code> as the build backend.</p>
+  <pre><code>[build-system]
+requires = ["setuptools&gt;=68", "wheel"]
+build-backend = "setuptools.build_meta"</code></pre>
+  <p>This is the metadata pip reads when installing the project.</p>
+</section>
+
+<section>
+  <h2>Project Metadata</h2>
+  <ul>
+    <li><code>name = "greenpoll"</code>: the package distribution name.</li>
+    <li><code>requires-python = "&gt;=3.11"</code>: supported Python versions.</li>
+    <li>Dependencies include <code>ultralytics</code>, <code>torch</code>, <code>pyyaml</code>, <code>matplotlib</code>, and <code>seaborn</code>.</li>
+  </ul>
+  <div class="callout">
+    <p>The dependency list tells you what this repo expects at runtime, but not whether every dependency is used in every code path.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Editable Install</h2>
+  <p>The README recommends:</p>
+  <pre><code>pip install -e .[dev]</code></pre>
+  <p><code>-e</code> means editable mode: imports point at your working tree, so Python sees source changes immediately without reinstalling.</p>
+  <p><code>.[dev]</code> installs optional development tools such as <code>pytest</code>, <code>pytest-cov</code>, and <code>ruff</code>.</p>
+</section>
+
+<section>
+  <h2>The src Layout</h2>
+  <pre><code>src/
+  greenpoll/
+    cli/
+    plan/
+    prioritize/
+    detect/
+    eval/
+    sim/
+    viz/</code></pre>
+  <p>The <code>src</code> layout prevents tests from accidentally importing files just because the current directory happens to be on <code>sys.path</code>.</p>
+</section>
+
+<section>
+  <h2>Command-Line Entry Point</h2>
+  <p><code>pyproject.toml</code> maps the terminal command <code>greenpoll</code> to <code>greenpoll.cli:main</code>.</p>
+  <pre><code>[project.scripts]
+greenpoll = "greenpoll.cli:main"</code></pre>
+  <p>The current CLI is intentionally small: it parses <code>--version</code> and otherwise prints help.</p>
+</section>
+
+<section>
+  <h2>Unit Test: Scoring</h2>
+  <p><code>src/greenpoll/prioritize/scoring.py</code> defines a simple target model and score.</p>
+  <pre><code>score =
+  readiness reward
+  + confidence reward
+  - distance penalty
+  - occlusion penalty</code></pre>
+  <p>The test checks the behavior, not just the formula: a near clear target should outrank a far occluded one.</p>
+</section>
+
+<section>
+  <h2>Unit Test: Routing</h2>
+  <p><code>src/greenpoll/plan/baselines.py</code> implements a nearest-neighbor route heuristic.</p>
+  <div class="callout">
+    <p>A heuristic is a practical rule that is not guaranteed to be globally optimal. Nearest-neighbor repeatedly chooses the closest unvisited point.</p>
+  </div>
+  <p>The current test confirms that all points are returned and that the first chosen point is the closest to the default start.</p>
+</section>
+
+<section>
+  <h2>CI: The Automated Gate</h2>
+  <p><code>.github/workflows/ci.yml</code> runs on pushes and pull requests.</p>
+  <ol>
+    <li>Checkout code.</li>
+    <li>Set up Python 3.11.</li>
+    <li>Install <code>pip install -e .[dev]</code>.</li>
+    <li>Run <code>ruff check .</code>.</li>
+    <li>Run <code>pytest</code>.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>What CI Does Not Prove</h2>
+  <div class="callout warning">
+    <p>Passing CI does not prove GPU experiments are correct. It proves the lightweight package code passes lint and unit tests.</p>
+  </div>
+  <p>The training scripts depend on data, Ultralytics, GPU/MPS behavior, checkpoints, and CSV artifacts. Those are mostly integration concerns outside the fast unit tests.</p>
+</section>
+
+<section>
+  <h2>Why This Matters For The Paper</h2>
+  <p>Software quality and research validity overlap but are not identical.</p>
+  <ul>
+    <li>Unit tests reduce bugs in small deterministic functions.</li>
+    <li>Experiment logs reduce ambiguity in long-running ML results.</li>
+    <li>Generated paper assets reduce manual transcription errors.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Key Takeaways</h2>
+  <ul>
+    <li><code>pyproject.toml</code> defines how the project is installed, tested, and linted.</li>
+    <li>The installable package is currently small; the major experiment logic lives in <code>scripts/</code>.</li>
+    <li>CI is a useful safety net, but it is not a substitute for experiment reproducibility.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Exercises</h2>
+  <div class="checkpoint">
+    <ol>
+      <li>Explain why <code>pip install -e .[dev]</code> is helpful during development.</li>
+      <li>What behavior does <code>test_priority_score_penalizes_distance_and_occlusion</code> protect?</li>
+      <li>Why is nearest-neighbor a heuristic rather than an optimal planner?</li>
+      <li>Name one important experiment failure that CI would not catch.</li>
+    </ol>
+  </div>
+</section>
+
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script>Reveal.initialize({ hash: true, slideNumber: "c/t", transition: "fade", controlsTutorial: false });</script>
+</body>
+</html>
