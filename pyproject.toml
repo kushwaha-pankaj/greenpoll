@@ -31,9 +31,13 @@ dev = [
   "pytest-cov>=5.0",
   "ruff>=0.5"
 ]
+demo = [
+  "gradio>=4.0"
+]
 
 [project.scripts]
 greenpoll = "greenpoll.cli:main"
+greenpoll-demo = "greenpoll.detect.gradio_app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

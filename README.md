@@ -39,6 +39,42 @@ pip install -e .[dev]
 pytest
 ```
 
+## MVP demo (Gradio — flower detection in the browser)
+
+Optional UI to run a YOLO checkpoint on an **uploaded image** or **webcam** capture, with boxes drawn and a short detection summary.
+
+### Install
+
+```bash
+pip install -e ".[demo]"
+```
+
+### Run
+
+```bash
+greenpoll-demo
+```
+
+**Kiwi-oriented default (`--crop auto`, the default):** if a kiwi fine-tuned checkpoint exists under `runs/step3/**/weights/best.pt` (from `run_baselines.py`), that **newest** file is loaded. Otherwise the demo falls back to `checkpoints/joint_pretrain.pt` and tells you in the UI.
+
+```bash
+# Require a kiwi fine-tune (exit with help if none under runs/step3/)
+greenpoll-demo --crop kiwi
+
+# Joint pretrain only (apple + strawberry + tomato flowers)
+greenpoll-demo --crop joint
+
+# Explicit kiwi checkpoint
+greenpoll-demo --weights runs/step3/crosspoll_freeze10/crosspoll_freeze10_kiwi_b100_s42/weights/best.pt
+```
+
+- **Override path without flags:** set `GREENPOLL_DEMO_WEIGHTS` to a `.pt` file (same effect as `--weights`).
+- **Device:** set `GREENPOLL_DEVICE` (e.g. `0` for CUDA, `mps`, `cpu`) or pass `--device`.
+- **Project root:** if default paths break, set `GREENPOLL_ROOT` to the repo root.
+- **Security:** the server binds to **127.0.0.1** by default. Only use `--share` if you intend to create a temporary public Gradio URL.
+
+Flags: `--crop`, `--weights`, `--conf`, `--imgsz`, `--host`, `--port`, `--share`.
+
 ## Research rules
 - No fabricated results
 - No fake citations
